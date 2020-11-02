@@ -74,7 +74,7 @@ for basic_block in cfg.basic_blocks:
 print("[*] Exploring functions...")
 
 for function in sorted(cfg.functions, key=lambda x: x.start_addr):
-    ('\tFound function {}'.format(function.name))
+    print('\tFound function {}'.format(function.name))
     createFunction(toAddr(function.start_addr), function.name)
     listing = currentProgram.getListing()
     codeUnit = listing.getCodeUnitAt(toAddr(function.start_addr))
