@@ -158,6 +158,8 @@ macro pop8(x)
    
    _part5 = _part1 | _part2 | _part3 | _part4;
     
+    _part5 = _part5 & 0x0000ffff;
+    
  	goto [_part5];     
 }
 
@@ -178,7 +180,7 @@ macro pop8(x)
    _value4 = inst_start;
    _value5 = *[evm_jump_table]_value4;
    _value3 = _value5 >> 32;
-   
+      
    _part1 :4 = 0;
    _part2 :4 = 0;
    _part3 :4 = 0;
@@ -192,6 +194,7 @@ macro pop8(x)
    _part4 = ((_part6<<24) & 0xff000000);
    
    _part5 = _part1 | _part2 | _part3 | _part4;
+   _part5 = _part5 & 0x0000ffff;
 	
 	goto [_part5];
 

@@ -8,7 +8,7 @@ ghidra-evm is a ghidra loader and plugin to reverse engineering Ethereum VM
 
 - Install ghidra_bridge, following the instructions at https://github.com/justfoxing/ghidra_bridge
 - Install the crytic evm_cfg_builder library, following the instructions at https://github.com/crytic/evm_cfg_builder
-- Install the last ghidra-evm release file at dist/
+- Install the last ghidra-evm release file at ghidra_evm/dist/:
 	- Open ghidra
 	- File -> Install Extensions
 	- Click on '+' and select the zip file e.g. ghidra_9.1.2_PUBLIC_20201102_ghidra_evm.zip
