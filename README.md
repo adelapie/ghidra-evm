@@ -38,11 +38,12 @@ if __name__ == '__main__':
     code = f.read()
     f.close()
 
-    code = code.replace('\n', '').decode('hex')
+    code = code.replace('\n', '')
+    code_evm = bytes.fromhex(code)
 
     f = open(filename_output, 'wb')
     #f.write('EVM')
-    f.write(code)
+    f.write(code_evm)
     f.close()
 ```
 
