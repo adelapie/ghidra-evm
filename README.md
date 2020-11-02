@@ -2,7 +2,7 @@
 # Ghidra EVM Module
 
 ghidra-evm is a ghidra loader and plugin to reverse engineering Ethereum VM
-(EVM) bytecode. This version relies on Ghidra API 9.1.2.
+(EVM) bytecode. This version uses the Ghidra 9.1.2 API.
 
 ## Instalation instructions
 
@@ -46,7 +46,8 @@ if __name__ == '__main__':
     f.close()
 ```
 
-- Launch ghidra, create a new project and import a .evm file. You can use the examples available at test/
+- Launch ghidra, create a new project and import a .evm file. You can use the examples available at
+  examples/
 
 ![main](media/1.png)
 
