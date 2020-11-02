@@ -1,0 +1,7 @@
+<opinions>
+    <constraint loader="Simple evm extension loader" compilerSpecID="default">
+        <constraint	processor="evm" endian="big" size="64" />
+    </constraint>
+</opinions>
+
+

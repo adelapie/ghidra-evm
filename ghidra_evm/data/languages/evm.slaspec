@@ -1,0 +1,2415 @@
+
+@define SIZE "8"
+
+define endian=big;
+define alignment=1;
+
+define space register     	type=register_space  size=$(SIZE)  wordsize=1;
+define space ram          	type=ram_space       size=$(SIZE)  wordsize=1 default;
+define space evm_ram 	  	type=ram_space size=$(SIZE) wordsize=1;
+define space evm_jump_table type=ram_space size=$(SIZE) wordsize=1;
+
+define register offset=0x00 size=$(SIZE) [sp pc];
+
+define token instr(8)
+    op = (0, 7)
+;
+
+define pcodeop get_account_balance;
+define pcodeop msg_value;
+define pcodeop transaction_data_size;
+define pcodeop transaction_data_load;
+define pcodeop load_storage_word;
+define pcodeop save_storage_word;
+define pcodeop log_data;
+
+define pcodeop addr_revert;
+define pcodeop addr_stop;
+
+define pcodeop keccak256;
+
+define pcodeop get_block_beneficiary_address;
+define pcodeop get_account_code;
+define pcodeop get_account_address;
+define pcodeop code_copy_to_memory;
+define pcodeop get_caller_address;
+
+macro push8(x)
+{
+	sp = sp - $(SIZE);
+	*:$(SIZE) sp = x;
+}
+
+macro pop8(x)
+{
+	x = *:$(SIZE) sp;
+	sp = sp + $(SIZE);
+}
+
+:CALLER is op=0x33 {
+		_value1 :$(SIZE) = get_caller_address();
+		push8(_value1);
+}
+
+:CODECOPY is op=0x39 {
+	
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+
+		
+	pop8(_value1); # mem slot
+	pop8(_value2); # offset
+	pop8(_value3); # no. bytes
+
+	code_copy_to_memory(_value1, _value2, _value3);	
+
+}
+
+:EXTCODECOPY is op = 0x3c {
+	
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+
+		
+	pop8(_value1); # mem slot
+	pop8(_value2); # offset
+	pop8(_value3); # no. bytes
+
+	code_copy_to_memory(_value1, _value2, _value3);	
+	
+}
+
+:SLOAD is op = 0x54 {
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+
+	pop8(_value1);
+	_value2 = load_storage_word(_value1);	
+	push8(_value2);
+
+}
+
+:SSTORE is op = 0x55 {
+	_value1 :$(SIZE) = 0;
+		pop8(_value1);
+		save_storage_word(_value1);
+
+}
+
+:CALLVALUE is op = 0x34 {
+	#sp = sp + 1;
+		_value1 :$(SIZE) = 0;
+	
+	_value1 = msg_value();
+
+	push8(_value1);
+}
+
+:COINBASE is op=0x41 {
+			
+	_value1 :$(SIZE) = 0;		
+	_value1 = get_block_beneficiary_address();
+
+	push8(_value1);	
+}
+
+:ISZERO is op=0x15 {
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+
+	pop8(_value1);
+
+	_value2 = zext(_value1 == _value3);
+
+	push8(_value2);		
+}
+
+:JUMP is op=0x56 {
+   
+   	_value1 :$(SIZE) = 0;
+    _value2 :$(SIZE) = 0;
+    _value3 :$(SIZE) = 0;
+    _value4 :$(SIZE) = 0;
+        
+   _value1 = inst_start;
+   _value2 = *[evm_jump_table]_value1;
+
+   	#return (((x>>24) & 0x000000ff) | ((x>>8) & 0x0000ff00) | ((x<<8) & 0x00ff0000) | ((x<<24) & 0xff000000));
+      
+   _value3 = _value2 >> 32;
+   
+   _part1 :4 = 0;
+   _part2 :4 = 0;
+   _part3 :4 = 0;
+   _part4 :4 = 0;
+   _part5 :4 = 0;
+   _part6 :4 = _value3:4;
+ 
+   _part1 =  (((_part6>>24) & 0x000000ff));
+   _part2 = ((_part6>>8) & 0x0000ff00);
+   _part3 = ((_part6<<8) & 0x00ff0000);
+   _part4 = ((_part6<<24) & 0xff000000);
+   
+   _part5 = _part1 | _part2 | _part3 | _part4;
+    
+ 	goto [_part5];     
+}
+
+:JUMPI is op=0x57 {
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+
+	pop8(_value1);
+	pop8(_value2);
+
+	if(_value2 == 0) goto <end>;
+	
+   _value4 = inst_start;
+   _value5 = *[evm_jump_table]_value4;
+   _value3 = _value5 >> 32;
+   
+   _part1 :4 = 0;
+   _part2 :4 = 0;
+   _part3 :4 = 0;
+   _part4 :4 = 0;
+   _part5 :4 = 0;
+   _part6 :4 = _value3:4;
+ 
+   _part1 =  (((_part6>>24) & 0x000000ff));
+   _part2 = ((_part6>>8) & 0x0000ff00);
+   _part3 = ((_part6<<8) & 0x00ff0000);
+   _part4 = ((_part6<<24) & 0xff000000);
+   
+   _part5 = _part1 | _part2 | _part3 | _part4;
+	
+	goto [_part5];
+
+<end>
+}
+
+# Alternative JUMPI description
+# (no jump table):
+#:JUMPI is op=0x57 {
+
+	#_value1 :$(SIZE) = 0;
+	#_value2 :$(SIZE) = 0;
+
+	#pop8(_value1);
+	#pop8(_value2);
+
+	#if(_value2 == 0) goto <end>;
+	
+	#goto [_value1];
+
+#<end>
+#}
+
+define pcodeop get_stop_ret_addr;
+define pcodeop get_revert_ret_addr;
+
+
+:POP is op=0x50  {
+	
+	_value1 :$(SIZE) = 0;
+	pop8(_value1);	
+}
+
+:STOP is op=0x00  {
+    
+ 	pc= 0; 
+ 	sp = sp + $(SIZE);
+ 	pc = pc & 0xffffffff;
+ 	return [pc];
+}
+
+:REVERT is op=0xfd {
+	
+ pc= 0; 
+ sp = sp + $(SIZE);
+ pc = pc & 0xffffffff;
+ return [pc];
+}
+
+:RETURN is op=0xf3 {
+		
+ pc= 0; 
+ sp = sp + $(SIZE);
+ pc = pc & 0xffffffff;
+ return [pc];
+}
+
+:JUMPDEST is op=0x5b {}
+
+:MSTORE is op=0x52 {
+	local addr_t:8;
+	local val_t:8;
+	
+	pop8(addr_t);
+	pop8(val_t);
+	
+	*[evm_ram]addr_t = val_t;
+}
+
+:MLOAD is op=0x51 {
+	local addr_t:8;
+	local val_t:8;
+	
+	pop8(addr_t);
+	val_t = *[evm_ram]addr_t;
+	push8(val_t);
+}
+
+:CALLDATASIZE is op=0x36 {
+	_value1 :$(SIZE) = 0;
+	_value1 = transaction_data_size();
+   	push8(_value1);
+}
+
+:CALLDATALOAD is op=0x35 {
+
+	_value1 :$(SIZE) = 0;
+	
+	_value1 = transaction_data_load();
+	push8(_value1);
+}
+
+
+:SHR is op=0x1c {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = _value2 >> _value1;
+		
+		push8(_value3);
+}
+
+:SHA3 is op=0x20 {
+
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		_value2 = keccak256(_value1);
+
+		push8(_value2);
+}
+
+:LT is op=0x10 {
+
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = zext(_value1 < _value2);
+		
+		push8(_value3);
+
+}
+
+:SLT is op=0x12 {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = zext(_value1 < _value2);
+		
+		push8(_value3);
+
+
+}
+
+
+
+:EQ is op=0x14 {
+	
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = zext(_value1 == _value2);
+		push8(_value3);
+}
+
+
+:ADD is op=0x01 {
+
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = _value1 + _value2;
+
+		push8(_value3);
+
+}
+
+:AND is op=0x16 {
+
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = _value1 & _value2;
+
+		push8(_value3);
+
+}
+
+:OR is op=0x17 {
+
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = _value1 | _value2;
+
+		push8(_value3);
+
+}
+
+:EXP is op=0x0a {
+
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = _value1 ** _value2;
+
+		push8(_value3);
+
+}
+
+:MUL is op=0x02 {
+
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = _value1 * _value2;
+
+		push8(_value3);
+
+}
+
+
+:SUB is op=0x03 {
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = _value1 - _value2;
+		
+		push8(_value3);
+}
+
+:NOT is op=0x19 {
+	_value :$(SIZE) = 0;
+	_result :$(SIZE) = 0;
+	pop8(_value);
+	_result = ~_value;
+	push8(_result);	
+}
+
+:DIV is op=0x04 {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = _value1 / _value2;
+
+		push8(_value3);		
+}
+
+:SDIV is op=0x05 {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = _value1 s/ _value2;
+
+		push8(_value3);			
+}
+
+:MOD is op=0x06 {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = _value1 % _value2;
+
+		push8(_value3);		
+}
+
+
+:SMOD is op=0x07 {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = _value1 s% _value2;
+
+		push8(_value3);	
+}
+
+
+
+
+:ADDMOD is op=0x08 {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		_value4 :$(SIZE) = 0;
+		_value5 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		pop8(_value3);
+		
+		_value4 = _value1 + _value2;
+		_value5 = _value4 % _value3;
+
+		push8(_value5);	
+}
+
+
+
+
+:MULMOD is op=0x09 {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		_value4 :$(SIZE) = 0;
+		_value5 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		pop8(_value3);
+		
+		_value4 = _value1 * _value2;
+		_value5 = _value4 % _value3;
+
+		push8(_value5);	
+}
+
+
+
+
+
+
+
+:SIGNEXTEND is op=0x0b {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+
+		_value3 = sext(_value1);
+		push8(_value3);	
+}
+
+
+:GT is op=0x11 {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = zext(_value1 > _value2);
+		
+		push8(_value3);
+}
+
+:SGT is op=0x13 {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = zext(_value1 > _value2);
+		
+		push8(_value3);	
+}
+
+
+:XOR is op=0x18 {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = _value1 ^ _value2;
+
+		push8(_value3);	
+}
+
+
+
+:BYTE is op=0x1a {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		push8(_value2:1);		
+}
+
+
+
+:SHL is op=0x1b {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = _value2 << _value1;
+		
+		push8(_value3);
+}
+
+:SAR is op=0x1d {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		_value3 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		pop8(_value2);
+		
+		_value3 = sext(_value2 >> _value1);
+		
+		push8(_value3);
+}
+
+:ADDRESS is op=0x30 {
+	_value1 :$(SIZE) = 0;
+	
+	_value1 = get_account_address();
+	push8(_value1);
+}
+
+
+
+:BALANCE is op=0x31 {
+		_value1 :$(SIZE) = 0;
+	
+	_value1 = get_account_balance();
+	push8(_value1);
+}
+
+define pcodeop get_origination_address;
+
+:ORIGIN is op=0x32 {
+	_value1 :$(SIZE) = 0;
+	
+	_value1 = get_origination_address();
+	push8(_value1);
+}
+
+define pcodeop get_environment_input_data;
+
+
+
+:CALLDATACOPY is op=0x37 {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		
+		pop8(_value1);
+		_value2 = get_environment_input_data();
+	
+		*[evm_ram]_value1 = _value2;
+}
+
+define pcodeop get_environment_code_size;
+
+:CODESIZE is op=0x38 {
+		_value1 :$(SIZE) = 0;
+		_value1 = get_environment_code_size();
+		push8(_value1);
+}
+
+define pcodeop get_gas_price;
+
+:GASPRICE is op=0x3a {
+		_value1 :$(SIZE) = 0;
+		_value1 = get_gas_price();
+		push8(_value1);
+}
+
+
+:EXTCODESIZE is op=0x3b {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+
+		pop8(_value1);
+		_value2 = get_environment_code_size(_value1);
+
+		push8(_value2);
+}
+
+define pcodeop get_output_data_size;
+
+:RETURNDATASIZE is op=0x3d {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+
+		pop8(_value1);
+		_value2 = get_output_data_size(_value1);
+
+		push8(_value2);	
+}
+
+define pcodeop output_data_previous_call;
+
+:RETURNDATACOPY is op=0x3e {
+		_value1 :$(SIZE) = 0;
+		_value2 :$(SIZE) = 0;
+		
+		_value2 = output_data_previous_call();
+		
+		pop8(_value1);
+	
+		*[evm_ram]_value1 = _value2;
+}
+
+define pcodeop get_block_hash;
+
+:BLOCKHASH is op=0x40 {
+		_value1 :$(SIZE) = 0;
+		_value1 = get_block_hash();
+
+		push8(_value1);	
+}
+
+define pcodeop get_block_time_stamp;
+
+:TIMESTAMP is op=0x42 {
+		_value1 :$(SIZE) = 0;
+		_value1 = get_block_time_stamp();
+
+		push8(_value1);	
+}
+
+define pcodeop get_block_number;
+
+:NUMBER is op=0x43 {
+		_value1 :$(SIZE) = 0;
+		_value1 = get_block_number();
+
+		push8(_value1);	
+}
+
+define pcodeop get_block_difficulty;
+
+:DIFFICULTY is op=0x44 {
+		_value1 :$(SIZE) = 0;
+		_value1 = get_block_number();
+
+		push8(_value1);	
+}
+
+define pcodeop get_block_gas_limit;
+
+
+:GASLIMIT is op=0x45 {
+		_value1 :$(SIZE) = 0;
+		_value1 = get_block_gas_limit();
+
+		push8(_value1);	
+}
+
+
+:MSTORE8 is op=0x53 {
+	local addr_t:8;
+	local val_t:8;
+	
+	pop8(addr_t);
+	pop8(val_t);
+	
+	*[evm_ram]addr_t = val_t:1;		
+}
+
+:GETPC is op=0x58 {
+	push8(pc);
+}
+
+define pcodeop  get_chain_identifier;
+
+:CHAINID is op=0x46 {
+	_value1 :$(SIZE) = 0;
+	_value1 = get_chain_identifier();
+	push8(_value1);
+}
+
+define pcodeop get_active_memory_size;
+
+:MSIZE is op=0x59 {
+		_value1 :$(SIZE) = 0;
+		_value1 = get_active_memory_size();
+
+		push8(_value1);	
+}
+
+define pcodeop get_available_gas;
+
+:GAS is op=0x5a {
+
+		_value1 :$(SIZE) = 0;
+		_value1 = get_available_gas();
+
+		push8(_value1);		
+	
+}
+
+define token data8(8)
+	imm8=(0,7)
+;
+
+define token data16(16)
+	imm16=(0,15)
+;
+
+define token data24(24)
+	imm24=(0,23)
+;
+
+define token data64(64)
+	imm64=(0,63)
+;
+
+define token data_64_1(64)
+	imm_64_1=(0,63)
+;
+
+define token data_64_2(64)
+	imm_64_2=(0,63)
+;
+
+define token data_64_3(64)
+	imm_64_3=(0,63)
+;
+
+define token data_32_1(32)
+	imm_32_1=(0,31)
+;
+
+
+define token ext32(32)
+	imm32=(0,31)
+;
+
+define token ext40(40)
+	imm40=(0,39)
+;
+
+define token ext48(48)
+	imm48=(0,47)
+;
+
+define token ext56(56)
+	imm56=(0,55)
+;
+
+:PUSH1 imm8 is op=0x60 ; imm8 {
+	push8(imm8:$(SIZE));
+}
+
+
+:PUSH2 imm16 is op=0x61 ; imm16 {
+	push8(imm16:$(SIZE));
+
+}
+
+:PUSH3 imm24 is op=0x62 ; imm24 {}
+:PUSH4 imm32 is op=0x63 ; imm32 {}
+:PUSH5 imm40 is op=0x64 ; imm40 {}
+:PUSH6 imm48 is op=0x65 ; imm48 {}
+:PUSH7 imm56 is op=0x66 ; imm56 {}
+:PUSH8 imm64 is op=0x67 ; imm64 {}
+:PUSH9 imm64, imm8 is op=0x68 ; imm64 ; imm8 {}
+:PUSH10 imm64, imm16 is op=0x69 ; imm64 ; imm16 {}
+:PUSH11 imm64, imm24 is op=0x6a ; imm64; imm24 {}
+:PUSH12 imm64, imm32 is op=0x6b ; imm64 ; imm32 {}
+:PUSH13 imm64, imm32, imm8 is op=0x6c ; imm64 ; imm32 ; imm8 {}
+:PUSH14 imm64, imm32, imm16 is op=0x6d ; imm64 ; imm32 ; imm16 {}
+:PUSH15 imm64, imm32, imm24 is op=0x6e ; imm64 ; imm32 ; imm24 {}
+:PUSH16 imm64, imm40, imm24 is op=0x6f ; imm64 ; imm40 ; imm24 {}
+:PUSH17 imm64, imm32, imm40 is op=0x70 ; imm64 ; imm32 ; imm40 {}
+:PUSH18 imm64, imm32, imm48 is op=0x71 ; imm64 ; imm32 ; imm48 {}
+:PUSH19 imm64, imm32, imm56 is op=0x72 ; imm64 ; imm32 ; imm56 {}
+:PUSH20 imm_64_1, imm_64_2, imm_32_1 is op=0x73 ; imm_64_1 ; imm_64_2 ; imm_32_1 {}
+:PUSH21 imm_64_1, imm_64_2, imm40 is op=0x74 ; imm_64_1 ; imm_64_2 ; imm40 {}
+:PUSH22 imm_64_1, imm_64_2, imm48 is op=0x75 ;  imm_64_1 ; imm_64_2 ; imm48 {}
+:PUSH23 imm_64_1, imm_64_2, imm56 is op=0x76 ; imm_64_1 ; imm_64_2 ; imm56 {}
+:PUSH24 imm_64_1, imm_64_2, imm64 is op=0x77 ; imm_64_1 ; imm_64_2 ;  imm64 {}
+:PUSH25 imm_64_1, imm_64_2, imm64, imm8 is op=0x78 ; imm_64_1 ; imm_64_2 ; imm64 ; imm8 {}
+:PUSH26 imm_64_1, imm_64_2, imm64, imm16 is op=0x79 ; imm_64_1 ; imm_64_2 ; imm64 ; imm16 {}
+:PUSH27 imm_64_1, imm_64_2, imm64, imm24 is op=0x7a ; imm_64_1 ; imm_64_2 ; imm64 ; imm24 {}
+:PUSH28 imm_64_1, imm_64_2, imm64, imm32 is op=0x7b ; imm_64_1 ; imm_64_2 ; imm64 ; imm32 {}
+:PUSH29 imm_64_1, imm_64_2, imm64, imm40 is op=0x7c ; imm_64_1 ; imm_64_2 ; imm64 ; imm40 {}
+:PUSH30 imm_64_1, imm_64_2, imm64, imm48 is op=0x7d ; imm_64_1 ; imm_64_2 ; imm64 ; imm48 {}
+:PUSH31 imm_64_1, imm_64_2, imm64, imm56  is op=0x7e ; imm_64_1 ; imm_64_2 ; imm64 ; imm56 {}
+:PUSH32 imm_64_1, imm_64_2, imm64, imm56, imm8 is op=0x7f ; imm_64_1 ; imm_64_2 ; imm64 ; imm56 ; imm8  {}
+
+:DUP1 is op=0x80 {
+	_value1 :$(SIZE) = 0;
+	_value1= *:$(SIZE) sp;
+	push8(_value1);
+
+}
+
+:DUP2 is op=0x81 {
+	
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	pop8(_value1);
+	pop8(_value2);
+	push8(_value2);
+	push8(_value1);
+	push8(_value2);
+	push8(_value1);
+
+}
+
+:DUP3 is op=0x82 {
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	
+	push8(_value3);
+	push8(_value2);
+	push8(_value1);
+	push8(_value3);
+	push8(_value2);
+	push8(_value1);	
+}
+
+
+:DUP4 is op=0x83 {
+	
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+		
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);	
+	
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);		
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);		
+
+}
+
+:DUP5 is op=0x84 {
+	
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+		
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);	
+	pop8(_value5);	
+	
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);		
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);		
+
+}
+
+:DUP6 is op=0x85 {
+	
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+		
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	
+	push8(_value6);		
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);	
+	push8(_value6);			
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);		
+
+}
+
+:DUP7 is op=0x86 {
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+		
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	
+	push8(_value7);		
+	push8(_value6);		
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);	
+	push8(_value6);			
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);				
+}
+
+:DUP8 is op=0x87 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+		
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	
+	push8(_value8);			
+	push8(_value7);		
+	push8(_value6);		
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);	
+	push8(_value8);				
+	push8(_value7);
+	push8(_value6);			
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);			
+}
+
+
+
+:DUP9 is op=0x88 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+		
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	
+	push8(_value9);			
+	push8(_value8);			
+	push8(_value7);		
+	push8(_value6);		
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);	
+	push8(_value9);					
+	push8(_value8);				
+	push8(_value7);
+	push8(_value6);			
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);			
+	
+	
+}
+
+:DUP10 is op=0x89 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+		
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+
+	push8(_value10);		
+	push8(_value9);			
+	push8(_value8);			
+	push8(_value7);		
+	push8(_value6);		
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);	
+	push8(_value10);		
+	push8(_value9);					
+	push8(_value8);				
+	push8(_value7);
+	push8(_value6);			
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);				
+}
+
+
+
+
+:DUP11 is op=0x8a {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	_value11 :$(SIZE) = 0;
+		
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	pop8(_value11);
+		
+	push8(_value11);		
+	push8(_value10);		
+	push8(_value9);			
+	push8(_value8);			
+	push8(_value7);		
+	push8(_value6);		
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);	
+	push8(_value11);			
+	push8(_value10);		
+	push8(_value9);					
+	push8(_value8);				
+	push8(_value7);
+	push8(_value6);			
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);			
+}
+
+
+
+:DUP12 is op=0x8b {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	_value11 :$(SIZE) = 0;
+	_value12 :$(SIZE) = 0;
+		
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	pop8(_value11);
+	pop8(_value12);		
+
+	push8(_value12);				
+	push8(_value11);		
+	push8(_value10);		
+	push8(_value9);			
+	push8(_value8);			
+	push8(_value7);		
+	push8(_value6);		
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);	
+	push8(_value12);					
+	push8(_value11);			
+	push8(_value10);		
+	push8(_value9);					
+	push8(_value8);				
+	push8(_value7);
+	push8(_value6);			
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);			
+}
+
+
+:DUP13 is op=0x8c {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	_value11 :$(SIZE) = 0;
+	_value12 :$(SIZE) = 0;
+	_value13 :$(SIZE) = 0;
+		
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	pop8(_value11);
+	pop8(_value12);		
+	pop8(_value13);		
+
+	push8(_value13);		
+	push8(_value12);				
+	push8(_value11);		
+	push8(_value10);		
+	push8(_value9);			
+	push8(_value8);			
+	push8(_value7);		
+	push8(_value6);		
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);	
+	push8(_value13);		
+	push8(_value12);		
+	push8(_value11);			
+	push8(_value10);		
+	push8(_value9);					
+	push8(_value8);				
+	push8(_value7);
+	push8(_value6);			
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);		
+}
+
+
+
+:DUP14 is op=0x8d {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	_value11 :$(SIZE) = 0;
+	_value12 :$(SIZE) = 0;
+	_value13 :$(SIZE) = 0;
+	_value14 :$(SIZE) = 0;
+		
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	pop8(_value11);
+	pop8(_value12);		
+	pop8(_value13);		
+	pop8(_value14);
+			
+	push8(_value14);		
+	push8(_value13);		
+	push8(_value12);				
+	push8(_value11);		
+	push8(_value10);		
+	push8(_value9);			
+	push8(_value8);			
+	push8(_value7);		
+	push8(_value6);		
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);	
+	push8(_value14);			
+	push8(_value13);		
+	push8(_value12);		
+	push8(_value11);			
+	push8(_value10);		
+	push8(_value9);					
+	push8(_value8);				
+	push8(_value7);
+	push8(_value6);			
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);		
+}
+
+:DUP15 is op=0x8e {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	_value11 :$(SIZE) = 0;
+	_value12 :$(SIZE) = 0;
+	_value13 :$(SIZE) = 0;
+	_value14 :$(SIZE) = 0;
+	_value15 :$(SIZE) = 0;
+		
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	pop8(_value11);
+	pop8(_value12);		
+	pop8(_value13);		
+	pop8(_value14);
+	pop8(_value15);
+	
+	push8(_value15);					
+	push8(_value14);		
+	push8(_value13);		
+	push8(_value12);				
+	push8(_value11);		
+	push8(_value10);		
+	push8(_value9);			
+	push8(_value8);			
+	push8(_value7);		
+	push8(_value6);		
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);
+	push8(_value15);				
+	push8(_value14);			
+	push8(_value13);		
+	push8(_value12);		
+	push8(_value11);			
+	push8(_value10);		
+	push8(_value9);					
+	push8(_value8);				
+	push8(_value7);
+	push8(_value6);			
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);			
+}
+:DUP16 is op=0x8f {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	_value11 :$(SIZE) = 0;
+	_value12 :$(SIZE) = 0;
+	_value13 :$(SIZE) = 0;
+	_value14 :$(SIZE) = 0;
+	_value15 :$(SIZE) = 0;
+	_value16 :$(SIZE) = 0;
+		
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	pop8(_value11);
+	pop8(_value12);		
+	pop8(_value13);		
+	pop8(_value14);
+	pop8(_value15);
+	pop8(_value16);
+	push8(_value16);						
+	push8(_value15);					
+	push8(_value14);		
+	push8(_value13);		
+	push8(_value12);				
+	push8(_value11);		
+	push8(_value10);		
+	push8(_value9);			
+	push8(_value8);			
+	push8(_value7);		
+	push8(_value6);		
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);
+	push8(_value16);						
+	push8(_value15);				
+	push8(_value14);			
+	push8(_value13);		
+	push8(_value12);		
+	push8(_value11);			
+	push8(_value10);		
+	push8(_value9);					
+	push8(_value8);				
+	push8(_value7);
+	push8(_value6);			
+	push8(_value5);
+	push8(_value4);
+	push8(_value3);
+	push8(_value2);	
+	push8(_value1);			
+}
+
+:SWAP1 is op=0x90 {
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	pop8(_value1);
+	pop8(_value2);
+	push8(_value1);
+	push8(_value2);
+}
+
+:SWAP2 is op=0x91 {
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+
+
+}
+
+:SWAP3 is op=0x92 {
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);	
+	
+}
+
+:SWAP4 is op=0x93 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);		
+	push8(_value5);		
+}
+
+
+:SWAP5 is op=0x94 {
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);	
+	push8(_value5);	
+	push8(_value6);	
+	
+}
+
+:SWAP6 is op=0x95 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);	
+	push8(_value5);	
+	push8(_value6);		
+	push8(_value7);		
+	
+}
+
+
+:SWAP7 is op=0x96 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);	
+	push8(_value5);	
+	push8(_value6);		
+	push8(_value7);			
+	push8(_value8);			
+	
+}
+:SWAP8 is op=0x97 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);	
+	push8(_value5);	
+	push8(_value6);		
+	push8(_value7);			
+	push8(_value8);		
+	push8(_value9);		
+	
+}
+:SWAP9 is op=0x98 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);	
+	push8(_value5);	
+	push8(_value6);		
+	push8(_value7);			
+	push8(_value8);		
+	push8(_value9);		
+	push8(_value10);			
+}
+:SWAP10 is op=0x99 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	_value11 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	pop8(_value11);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);	
+	push8(_value5);	
+	push8(_value6);		
+	push8(_value7);			
+	push8(_value8);		
+	push8(_value9);		
+	push8(_value10);	
+	push8(_value11);	
+}
+:SWAP11 is op=0x9a {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	_value11 :$(SIZE) = 0;
+	_value12 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	pop8(_value11);	
+	pop8(_value12);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);	
+	push8(_value5);	
+	push8(_value6);		
+	push8(_value7);			
+	push8(_value8);		
+	push8(_value9);		
+	push8(_value10);	
+	push8(_value11);
+	push8(_value12);			
+}
+:SWAP12 is op=0x9b {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	_value11 :$(SIZE) = 0;
+	_value12 :$(SIZE) = 0;
+	_value13 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	pop8(_value11);	
+	pop8(_value12);	
+	pop8(_value13);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);	
+	push8(_value5);	
+	push8(_value6);		
+	push8(_value7);			
+	push8(_value8);		
+	push8(_value9);		
+	push8(_value10);	
+	push8(_value11);
+	push8(_value12);	
+	push8(_value13);		
+		
+}
+
+:SWAP13 is op=0x9c {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	_value11 :$(SIZE) = 0;
+	_value12 :$(SIZE) = 0;
+	_value13 :$(SIZE) = 0;
+	_value14 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	pop8(_value11);	
+	pop8(_value12);	
+	pop8(_value13);	
+	pop8(_value14);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);	
+	push8(_value5);	
+	push8(_value6);		
+	push8(_value7);			
+	push8(_value8);		
+	push8(_value9);		
+	push8(_value10);	
+	push8(_value11);
+	push8(_value12);	
+	push8(_value13);	
+	push8(_value14);	
+	
+}
+:SWAP14 is op=0x9d {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	_value11 :$(SIZE) = 0;
+	_value12 :$(SIZE) = 0;
+	_value13 :$(SIZE) = 0;
+	_value14 :$(SIZE) = 0;
+	_value15 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	pop8(_value11);	
+	pop8(_value12);	
+	pop8(_value13);	
+	pop8(_value14);	
+	pop8(_value15);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);	
+	push8(_value5);	
+	push8(_value6);		
+	push8(_value7);			
+	push8(_value8);		
+	push8(_value9);		
+	push8(_value10);	
+	push8(_value11);
+	push8(_value12);	
+	push8(_value13);	
+	push8(_value14);		
+	push8(_value15);			
+}
+:SWAP15 is op=0x9e {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	_value11 :$(SIZE) = 0;
+	_value12 :$(SIZE) = 0;
+	_value13 :$(SIZE) = 0;
+	_value14 :$(SIZE) = 0;
+	_value15 :$(SIZE) = 0;
+	_value16 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	pop8(_value11);	
+	pop8(_value12);	
+	pop8(_value13);	
+	pop8(_value14);	
+	pop8(_value15);	
+	pop8(_value16);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);	
+	push8(_value5);	
+	push8(_value6);		
+	push8(_value7);			
+	push8(_value8);		
+	push8(_value9);		
+	push8(_value10);	
+	push8(_value11);
+	push8(_value12);	
+	push8(_value13);	
+	push8(_value14);		
+	push8(_value15);		
+	push8(_value16);		
+	
+}
+:SWAP16 is op=0x9f {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	_value7 :$(SIZE) = 0;
+	_value8 :$(SIZE) = 0;
+	_value9 :$(SIZE) = 0;
+	_value10 :$(SIZE) = 0;
+	_value11 :$(SIZE) = 0;
+	_value12 :$(SIZE) = 0;
+	_value13 :$(SIZE) = 0;
+	_value14 :$(SIZE) = 0;
+	_value15 :$(SIZE) = 0;
+	_value16 :$(SIZE) = 0;
+	_value17 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);	
+	pop8(_value6);	
+	pop8(_value7);	
+	pop8(_value8);	
+	pop8(_value9);	
+	pop8(_value10);	
+	pop8(_value11);	
+	pop8(_value12);	
+	pop8(_value13);	
+	pop8(_value14);	
+	pop8(_value15);	
+	pop8(_value16);	
+	pop8(_value17);	
+	
+	push8(_value1);
+	push8(_value2);
+	push8(_value3);
+	push8(_value4);	
+	push8(_value5);	
+	push8(_value6);		
+	push8(_value7);			
+	push8(_value8);		
+	push8(_value9);		
+	push8(_value10);	
+	push8(_value11);
+	push8(_value12);	
+	push8(_value13);	
+	push8(_value14);		
+	push8(_value15);		
+	push8(_value16);		
+	push8(_value17);			
+}
+
+
+
+:LOG0 is op=0xa0 {
+	_value1 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	log_data(_value1);
+
+	push8(_value1);	
+}
+:LOG1 is op=0xa1 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+		
+	log_data(_value2);
+
+	push8(_value1);	
+}
+:LOG2 is op=0xa2 {
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+		
+	log_data(_value2);
+	log_data(_value3);
+
+	push8(_value1);
+			
+}
+
+:LOG3 is op=0xa3 {
+
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);
+		
+	log_data(_value2);
+	log_data(_value3);
+	log_data(_value4);
+
+	push8(_value1);
+			
+}
+:LOG4 is op=0xa4 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	
+	pop8(_value1);
+	pop8(_value2);
+	pop8(_value3);
+	pop8(_value4);
+	pop8(_value5);
+		
+	log_data(_value2);
+	log_data(_value3);
+	log_data(_value4);
+	log_data(_value5);
+
+	push8(_value1);	
+}
+
+
+:JUMPTO imm8 is op=0xb0 ; imm8  {
+	_value1 :$(SIZE) = 0;
+	_value1 = imm8;
+	goto [_value1];	
+}
+
+:JUMPIF imm8 is op=0xb1 ; imm8 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+
+	pop8(_value1);
+
+	if(_value1 == 0) goto <end>;
+	_value2 = imm8;
+	goto [_value2];
+	<end>
+}
+
+:JUMPSUB imm8 is op=0xb2 ; imm8 {
+	_value1 :$(SIZE) = 0;
+	_value1 = imm8;
+	goto [_value1];	
+}
+
+:JUMPSUBV is op=0xb4 {}
+:BEGINSUB is op=0xb5 {}
+:BEGINDATA is op=0xb6 {}
+:RETURNSUB is op=0xb8 {
+	pc= 0; 
+ 	sp = sp + $(SIZE);
+ 	pc = pc & 0xffffffff;
+ 	return [pc];
+}
+
+
+:PUTLOCAL imm8 is op=0xb9 ; imm8 {
+	_value1 :$(SIZE) = 0;
+	pop8(_value1);
+	imm8 = _value1;
+}
+
+
+:GETLOCAL imm8 is op=0xba ; imm8 {
+	_value1 :$(SIZE) = 0;
+	_value1 = imm8;
+	push8(_value1);
+}
+
+:SLOADBYTES is op=0xe1 {}
+:SSTOREBYTES is op=0xe2 {}
+:SSIZE is op=0xe3 {}
+
+define pcodeop create_new_account;
+
+:CREATE is op=0xf0 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	
+	pop8(_value1);	
+	pop8(_value2);		
+	pop8(_value3);	
+	
+	create_new_account(_value1, _value2, _value3);
+}
+
+define pcodeop message_call_account;
+
+:CALL is op=0xf1 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	
+	pop8(_value1);	
+	pop8(_value2);		
+	pop8(_value3);	
+	pop8(_value4);	
+	
+	message_call_account(_value1, _value2, _value3, _value4);	
+}
+
+define pcodeop message_call_this_account;
+
+:CALLCODE is op=0xf2 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	
+	pop8(_value1);	
+	pop8(_value2);		
+	pop8(_value3);	
+	
+	message_call_this_account(_value1, _value2, _value3);	
+}
+
+define pcodeop delegate_call;
+
+:DELEGATECALL is op=0xf4 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	_value5 :$(SIZE) = 0;
+	_value6 :$(SIZE) = 0;
+	
+	pop8(_value1);	
+	pop8(_value2);		
+	pop8(_value3);	
+	pop8(_value4);	
+	pop8(_value5);		
+	pop8(_value6);
+			
+	delegate_call(_value1, _value2, _value3, _value4, _value5, _value6);	
+}
+
+
+:CREATE2 is op=0xf5 {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	
+	pop8(_value1);	
+	pop8(_value2);		
+	pop8(_value3);	
+	
+	create_new_account(_value1, _value2, _value3);	
+}
+
+define pcodeop message_static_call_account;
+
+:STATICCALL is op=0xfa {
+	_value1 :$(SIZE) = 0;
+	_value2 :$(SIZE) = 0;
+	_value3 :$(SIZE) = 0;
+	_value4 :$(SIZE) = 0;
+	
+	pop8(_value1);	
+	pop8(_value2);		
+	pop8(_value3);	
+	pop8(_value4);	
+	
+	message_static_call_account(_value1, _value2, _value3, _value4);	
+}
+
+define pcodeop call_self_destruct;
+
+:SELFDESTRUCT is op=0xff {
+
+ call_self_destruct();
+
+ pc= 0; 
+ sp = sp + $(SIZE);
+ pc = pc & 0xffffffff;
+ return [pc];	
+	
+}
+
+:UNUSED1 is op=0x0c {}
+:UNUSED2 is op=0x0d {}
+:UNUSED3 is op=0x0e {}
+:UNUSED4 is op=0x0f {}
+:UNUSED5 is op=0x21 {}
+:UNUSED6 is op=0x22 {}
+:UNUSED7 is op=0x23 {}
+:UNUSED8 is op=0x24 {}
+:UNUSED9 is op=0x25 {}
+:UNUSED10 is op=0x26 {}
+:UNUSED11 is op=0x27 {}
+:UNUSED12 is op=0x28 {}
+:UNUSED13 is op=0x29 {}
+:UNUSED14 is op=0x2a {}
+:UNUSED15 is op=0x2b {}
+:UNUSED16 is op=0x2c {}
+:UNUSED17 is op=0x2d {}
+:UNUSED18 is op=0x2e {}
+:UNUSED19 is op=0x2f {}
+:UNUSED20 is op=0x47 {}
+:UNUSED21 is op=0x48 {}
+:UNUSED22 is op=0x49 {}
+:UNUSED23 is op=0x4a {}
+:UNUSED24 is op=0x4b {}
+:UNUSED25 is op=0x4c {}
+:UNUSED26 is op=0x4d {}
+:UNUSED27 is op=0x4e {}
+:UNUSED28 is op=0x4f {}
+:UNUSED29 is op=0x5c {}
+:UNUSED30 is op=0x5d {}
+:UNUSED31 is op=0x5e {}
+:UNUSED32 is op=0x5f {}
+:UNUSED33 is op=0xa5 {}
+:UNUSED34 is op=0xa6 {}
+:UNUSED35 is op=0xa7 {}
+:UNUSED36 is op=0xa8 {}
+:UNUSED37 is op=0xa9 {}
+:UNUSED38 is op=0xab {}
+:UNUSED39 is op=0xac {}
+:UNUSED40 is op=0xad {}
+:UNUSED41 is op=0xae {}
+:UNUSED42 is op=0xaf {}
+:UNUSED43 is op=0xfb {}
+:UNUSED44 is op=0xf6 {}
+:UNUSED45 is op=0xf7 {}
+:UNUSED46 is op=0xf8 {}
+:UNUSED47 is op=0xf9 {}
+:UNUSED48 is op=0xe4 {}
+:UNUSED49 is op=0xe5 {}
+:UNUSED50 is op=0xe6 {}
+:UNUSED51 is op=0xe7 {}
+:UNUSED52 is op=0xe8 {}
+:UNUSED53 is op=0xe9 {}
+:UNUSED54 is op=0xea {}
+:UNUSED55 is op=0xeb {}
+:UNUSED56 is op=0xec {}
+:UNUSED57 is op=0xed {}
+:UNUSED58 is op=0xee {}
+:UNUSED59 is op=0xef {}
+:UNUSED60 is op=0xbb {}
+:UNUSED61 is op=0xbc {}
+:UNUSED62 is op=0xbd {}
+:UNUSED63 is op=0xbe {}
+:UNUSED64 is op=0xbf {}
+
+:INVALID is op=0xfe {
+	pc= 0; 
+ 	sp = sp + $(SIZE);
+ 	pc = pc & 0xffffffff;
+ 	return [pc];
+}
+
+
+
+
+

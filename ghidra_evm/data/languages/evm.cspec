@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<compiler_spec>
+	<readonly>
+    	<range space="evm_jump_table" first="0x00000000" last="0xx00000fff"/>
+	</readonly>
+    <global>
+        <range space="ram"/>
+        <range space="evm_ram"/>
+        <range space="evm_jump_table"/>
+    </global>
+    <stackpointer register="sp" space="ram" growth="negative"/>
+    <default_proto>
+        <prototype name="default" extrapop="unknown" stackshift="0">
+        <input></input>
+        <output></output>
+        </prototype>
+    </default_proto>
+</compiler_spec>
