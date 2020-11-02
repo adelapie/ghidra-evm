@@ -58,7 +58,7 @@ if __name__ == '__main__':
 ![script](media/2.png)
 
 - Run evm_helper.py. This script will fill the jump table of the contract and explore the functions, thus creating the CFG using the
-  crytic/evm_cfg_builder.
+  crytic evm_cfg_builder library.
 
 ```
 $ python3 evm_helper.py 
