@@ -12,6 +12,7 @@ import sys
 from tqdm import tqdm
 from evm_cfg_builder.cfg import CFG
 
+JUMP_TABLE_WORD_SIZE = 2
 
 print("""\
        _     _     _                                      
@@ -64,12 +65,12 @@ for basic_block in cfg.basic_blocks:
                 if ((out_block.start.pc - 1) != basic_block.end.pc):
                     print("\tJUMPI to: ", hex(out_block.start.pc))
                     jump_addr_list = out_block.start.pc.to_bytes(2, byteorder="little")
-                    evm_jump_table.putBytes(addr.add(basic_block.end.pc), jump_addr_list)
+                    evm_jump_table.putBytes(addr.add(JUMP_TABLE_WORD_SIZE*basic_block.end.pc), jump_addr_list)
 
         else:
             print("\tJUMP to:", hex(basic_block.all_outgoing_basic_blocks[0].start.pc))
             jump_addr_list = basic_block.all_outgoing_basic_blocks[0].start.pc.to_bytes(2, byteorder="little")
-            evm_jump_table.putBytes(addr.add(basic_block.end.pc), jump_addr_list)
+            evm_jump_table.putBytes(addr.add(JUMP_TABLE_WORD_SIZE*basic_block.end.pc), jump_addr_list)
 
 print("[*] Exploring functions...")
 
