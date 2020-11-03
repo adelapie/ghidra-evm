@@ -84,13 +84,13 @@ $ python3 evm_helper.py
 
 - ghidra_bridge is somewhat slow when loading code from Ghidra into python
 - The CFG is created according to evm_cfg_builder, this means that mainly
-the JUMP and JUMPI instructions are utilized. A jump table of 2x2 bytes is
+the JUMP and JUMPI instructions are utilized. A jump table of 16x16 is
 utilized to detect and show branches in the disassembly and control flow windows.
 - ghidra has not been designed to deal with architectures of wordsizes >
 64-bit. That means that supporting long instructions such as PUSH32 in
 SLEIGH should be done using alternative memory structures. Further, given
-the wordsize limitation in ghidra ghidra-evm only supports compiled
-contracts of up to 0xffff instructions.
+the wordsize limitation in Ghidra, ghidra-evm only supports compiled
+contracts with branches in the first 0xffff instructions.
 
 ### TODO
 
