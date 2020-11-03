@@ -96,9 +96,10 @@ contracts with branches in the first 0xffff instructions.
 ### TODO
 
 - Implement memory structures for dealing with instructions having
-large operands such as PUSH32 in order to improve the decompilation
-process.
-- Implement the storage functionality of Ethereum
+large operands such as PUSH32.
+- Improve the SLEIGH definitions of complex instructions to aid
+the decompilation process.
+- Implement the storage functionality of Ethereum.
 
 
 
