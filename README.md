@@ -11,7 +11,7 @@ limitations of Ghidra (See Notes and limitations).
 - A python3 script that uses evm_cfg_builder and ghidra_bridge in order to
 assist ghidra generating the CFG and exploring the function properties.
 
-## Instalation instructions
+## Installation instructions
 
 - Install ghidra_bridge, following the instructions at https://github.com/justfoxing/ghidra_bridge
 - Install the crytic evm_cfg_builder library, following the instructions at https://github.com/crytic/evm_cfg_builder
