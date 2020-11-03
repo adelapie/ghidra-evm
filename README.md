@@ -89,7 +89,7 @@ $ python3 evm_helper.py
 
 ### Notes and limitations
 
-- ghidra_bridge has a considerable latency when reading memory from Ghidra into
+- ghidra_bridge suffers from a considerable latency when reading memory from Ghidra into
   python3.
 - The CFG is created according to evm_cfg_builder, this means that mainly
 the JUMP and JUMPI instructions are utilized. A jump table of 16x16 is
