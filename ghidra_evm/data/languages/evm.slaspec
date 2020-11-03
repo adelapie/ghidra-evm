@@ -7,7 +7,7 @@ define alignment=1;
 define space register     	type=register_space  size=$(SIZE)  wordsize=1;
 define space ram          	type=ram_space       size=$(SIZE)  wordsize=1 default;
 define space evm_ram 	  	type=ram_space size=$(SIZE) wordsize=1;
-define space evm_jump_table type=ram_space size=$(SIZE) wordsize=1;
+define space evm_jump_table type=ram_space size=2 wordsize=2;
 
 define register offset=0x00 size=$(SIZE) [sp pc];
 
@@ -132,35 +132,21 @@ macro pop8(x)
 
 :JUMP is op=0x56 {
    
-   	_value1 :$(SIZE) = 0;
-    _value2 :$(SIZE) = 0;
-    _value3 :$(SIZE) = 0;
-    _value4 :$(SIZE) = 0;
-        
-   _value1 = inst_start;
-   _value2 = *[evm_jump_table]_value1;
+   _addr_now :$(SIZE) = 0;
+   _jump_now :2 = 0;
+	
+   _addr_now = inst_start;
+   _jump_now = *[evm_jump_table]_addr_now:2;
 
-   	#return (((x>>24) & 0x000000ff) | ((x>>8) & 0x0000ff00) | ((x<<8) & 0x00ff0000) | ((x<<24) & 0xff000000));
-      
-   _value3 = _value2 >> 32;
+   _part_a :2 = 0;
+   _part_b :2 = 0;
+   _part_c :2 = 0;
    
-   _part1 :4 = 0;
-   _part2 :4 = 0;
-   _part3 :4 = 0;
-   _part4 :4 = 0;
-   _part5 :4 = 0;
-   _part6 :4 = _value3:4;
- 
-   _part1 =  (((_part6>>24) & 0x000000ff));
-   _part2 = ((_part6>>8) & 0x0000ff00);
-   _part3 = ((_part6<<8) & 0x00ff0000);
-   _part4 = ((_part6<<24) & 0xff000000);
+   _part_a =  ((_jump_now >> 8) & 0x00ff);
+   _part_b = ((_jump_now << 8) & 0xff00);   
+   _part_c = _part_a | _part_b;
    
-   _part5 = _part1 | _part2 | _part3 | _part4;
-    
-    _part5 = _part5 & 0x0000ffff;
-    
- 	goto [_part5];     
+	goto[_part_c]; 	
 }
 
 :JUMPI is op=0x57 {
@@ -172,31 +158,26 @@ macro pop8(x)
 	_value5 :$(SIZE) = 0;
 	_value6 :$(SIZE) = 0;
 
-	pop8(_value1);
+	pop8(_value1); # we resolve the jump via the jump table
 	pop8(_value2);
 
 	if(_value2 == 0) goto <end>;
 	
-   _value4 = inst_start;
-   _value5 = *[evm_jump_table]_value4;
-   _value3 = _value5 >> 32;
-      
-   _part1 :4 = 0;
-   _part2 :4 = 0;
-   _part3 :4 = 0;
-   _part4 :4 = 0;
-   _part5 :4 = 0;
-   _part6 :4 = _value3:4;
- 
-   _part1 =  (((_part6>>24) & 0x000000ff));
-   _part2 = ((_part6>>8) & 0x0000ff00);
-   _part3 = ((_part6<<8) & 0x00ff0000);
-   _part4 = ((_part6<<24) & 0xff000000);
-   
-   _part5 = _part1 | _part2 | _part3 | _part4;
-   _part5 = _part5 & 0x0000ffff;
+    _addr_now :$(SIZE) = 0;
+	_jump_now :2 = 0;
 	
-	goto [_part5];
+	_addr_now = inst_start;
+    _jump_now = *[evm_jump_table]_addr_now:2;
+
+    _part_a :2 = 0;
+    _part_b :2 = 0;
+    _part_c :2 = 0;
+   
+    _part_a =  ((_jump_now >> 8) & 0x00ff);
+    _part_b = ((_jump_now << 8) & 0xff00);   
+    _part_c = _part_a | _part_b;
+   
+	goto[_part_c];
 
 <end>
 }
