@@ -80,9 +80,10 @@ $ python3 evm_helper.py
 ![demo1](media/main1.png)
 ![demo2](media/main2.png)
 
-### NOTES
+### Notes and limitations
 
-- ghidra_bridge is somewhat slow when loading code from Ghidra into python
+- ghidra_bridge has a considerable latency when reading memory from Ghidra into
+  python3.
 - The CFG is created according to evm_cfg_builder, this means that mainly
 the JUMP and JUMPI instructions are utilized. A jump table of 16x16 is
 utilized to detect and show branches in the disassembly and control flow windows.
