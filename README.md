@@ -2,7 +2,9 @@
 # Ghidra EVM Module
 
 ghidra-evm is a ghidra loader and plugin to reverse engineering Ethereum VM
-(EVM) bytecode. This version uses the Ghidra 9.1.2 API.
+(EVM) bytecode. This version uses the Ghidra 9.1.2 API. It relies on
+the crytic evm_cfg_builder library (https://github.com/crytic/evm_cfg_builder)
+to assist Ghidra in the CFG generation process.
 
 ## Instalation instructions
 
