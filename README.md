@@ -17,9 +17,12 @@ ghidra-evm is a ghidra loader and plugin to reverse engineering Ethereum VM
 
 ## Utilization
 
-ghidra-evm allows EVM bytecode with extension .evm and .evm_h. EVM bytecode
-in a .evm file is encoded in  binary  form without any magic number or tags. Hex code can be converted 
-to a .evm file via python using for instance a modified version of
+ghidra-evm detects EVM bytecode in files with extension .evm and .evm_h. The
+latter being generated via solc using the --bin and --bin-runtime options.
+On the other hand, EVM bytecode can be encoded in binary in a .evm file
+without any magic number of tags.
+
+Hex code can be converted  to a .evm file via python using for instance a modified version of
 convert_bytecode.py (see ethersplay, https://raw.githubusercontent.com/crytic/ethersplay/master/utils/convert_bytecode.py)
 
 ```
@@ -45,9 +48,6 @@ if __name__ == '__main__':
     f.write(code_evm)
     f.close()
 ```
-
-On the other hand, for simplicity bytecode in hex generated with solc using the --bin and
---bin-runtime options can be loaded into ghidra-evm in a .evm_h file.
 
 - Launch ghidra, create a new project and import a .evm file. You can use the examples available at
   examples/
@@ -84,7 +84,13 @@ $ python3 evm_helper.py
 
 - ghidra_bridge is somewhat slow when loading code from Ghidra into python
 - The CFG is created according to evm_cfg_builder, this means that mainly
-the JUMP and JUMPI instructions are utilized.
+the JUMP and JUMPI instructions are utilized. A jump table of 2x2 bytes is
+utilized to detect and show branches in the disassembly and control flow windows.
+- ghidra has not been designed to deal with architectures of wordsizes >
+64-bit. That means that supporting long instructions such as PUSH32 in
+SLEIGH should be done using alternative memory structures. Further, given
+the wordsize limitation in ghidra ghidra-evm only supports compiled
+contracts of up to 0xffff instructions.
 
 ### TODO
 
@@ -92,7 +98,6 @@ the JUMP and JUMPI instructions are utilized.
 large operands such as PUSH32 in order to improve the decompilation
 process.
 - Implement the storage functionality of Ethereum
-- Download contract code from the Ethereum blockchain
 
 
 
