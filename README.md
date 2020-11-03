@@ -17,8 +17,8 @@ ghidra-evm is a ghidra loader and plugin to reverse engineering Ethereum VM
 
 ## Utilization
 
-ghidra-evm expects for simplicity generated evm bytecode in binary 
-form without any magic number or tags. Hex code can be converted 
+ghidra-evm allows EVM bytecode with extension .evm and .evm_h. EVM bytecode
+in a .evm file is encoded in  binary  form without any magic number or tags. Hex code can be converted 
 to a .evm file via python using for instance a modified version of
 convert_bytecode.py (see ethersplay, https://raw.githubusercontent.com/crytic/ethersplay/master/utils/convert_bytecode.py)
 
@@ -42,10 +42,12 @@ if __name__ == '__main__':
     code_evm = bytes.fromhex(code)
 
     f = open(filename_output, 'wb')
-    #f.write('EVM')
     f.write(code_evm)
     f.close()
 ```
+
+On the other hand, for simplicity bytecode in hex generated with solc using the --bin and
+--bin-runtime options can be loaded into ghidra-evm in a .evm_h file.
 
 - Launch ghidra, create a new project and import a .evm file. You can use the examples available at
   examples/
