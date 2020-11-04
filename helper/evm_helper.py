@@ -9,6 +9,7 @@ analyze and disassemble evm code.
 import ghidra_bridge
 import pprint
 import sys
+import binascii
 from tqdm import tqdm
 from evm_cfg_builder.cfg import CFG
 
@@ -19,9 +20,30 @@ print("""\
   __ _| |__ (_) __| |_ __ __ _        _____   ___ __ ___  
  / _` | '_ \| |/ _` | '__/ _` |_____ / _ \ \ / / '_ ` _ \ 
 | (_| | | | | | (_| | | | (_| |_____|  __/\ V /| | | | | |
- \__, |_| |_|_|\__,_|_|  \__,_|      \___| \_/ |_| |_| |_|
+ \__, |_| |_|_|\__,_|_|  \__,_|      \___| \_/ |_| |_| |_| v.0.1
  |___/                                                    
 """)
+
+
+if len(sys.argv) != 2:
+    print("Usage: python(3) evm_helper.py input.[evm | evm.h]")
+    exit(0)
+
+print("[*] Parsing bytecode...")
+
+filename_input = sys.argv[1]
+
+if filename_input.endswith('.evm'):
+    with open(filename_input, 'rb') as f:
+        evm_code = f.read()
+    print(binascii.hexlify(evm_code))
+elif filename_input.endswith('.evm_h'):
+    with open(filename_input, 'r') as f:
+        evm_code = f.read()    
+        print(evm_code)
+else:
+    print("[!] Imposible to read bytecode")
+    exit(0)
 
 b = ghidra_bridge.GhidraBridge(namespace=globals(), response_timeout=1000) # creates the bridge and loads the flat API into the global namespace
 
@@ -38,6 +60,7 @@ setAnalysisOption(currentProgram, "Embedded Media", "false");
 setAnalysisOption(currentProgram, "ASCII Strings", "false");
 setAnalysisOption(currentProgram, "Create Address Tables", "false");
 
+"""
 print("[*] Reading RAM....")
 
 evm_code = ""
@@ -54,6 +77,7 @@ for i in tqdm(range(0, size)):
         evm_code = evm_code + "{:02x}".format(ram_byte & 0xff)
             
 print(evm_code)
+"""
 
 print("[*] Creating CFG...")
 cfg = CFG(evm_code)
