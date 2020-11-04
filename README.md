@@ -74,7 +74,6 @@ SLEIGH should be done via dedicated memory structures.
 large operands such as PUSH32.
 - Improve the SLEIGH definitions of complex instructions to aid
 the decompilation process.
-- Implement the storage functionality of Ethereum.
 
 
 
