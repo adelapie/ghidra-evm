@@ -27,8 +27,7 @@ assist ghidra generating the CFG and exploring the function properties.
 ghidra-evm detects EVM bytecode in files with extension .evm and .evm_h. The
 latter being generated via solc using the --bin and --bin-runtime options.
 On the other hand, EVM bytecode can be encoded in binary in a .evm file
-without any magic number of tags. Hex code can be converted  to a .evm file via python using for
-instance https://raw.githubusercontent.com/crytic/ethersplay/master/utils/convert_bytecode.py.
+without a magic number / tag.
 
 - Launch ghidra, create a new project and import a .evm file. You can use the examples available at
   examples/
