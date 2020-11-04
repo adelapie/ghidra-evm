@@ -133,6 +133,9 @@ macro pop8(x)
 }
 
 :JUMP is op=0x56 {
+ 
+ 	_ignored :$(SIZE) = 0; # we resolve the jump via the table
+ 	pop8(_ignored);
    
    _addr_now :$(SIZE) = inst_start;
    _jump_now :4 = 0;
