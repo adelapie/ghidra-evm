@@ -32,6 +32,12 @@ ram = memory.getBlock("ram")
 addr = ram.getStart()
 size = ram.getSize()
 
+print("[*] Setting analysis options....")
+
+setAnalysisOption(currentProgram, "Embedded Media", "false");
+setAnalysisOption(currentProgram, "ASCII Strings", "false");
+setAnalysisOption(currentProgram, "Create Address Tables", "false");
+
 print("[*] Reading RAM....")
 
 evm_code = ""
