@@ -27,34 +27,8 @@ assist ghidra generating the CFG and exploring the function properties.
 ghidra-evm detects EVM bytecode in files with extension .evm and .evm_h. The
 latter being generated via solc using the --bin and --bin-runtime options.
 On the other hand, EVM bytecode can be encoded in binary in a .evm file
-without any magic number of tags.
-
-Hex code can be converted  to a .evm file via python using for instance a modified version of
-convert_bytecode.py (see ethersplay, https://raw.githubusercontent.com/crytic/ethersplay/master/utils/convert_bytecode.py)
-
-```
-#!/usr/bin/python
-import sys
-
-if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: python convert_bytecode.py input.evm output.bytecode")
-        exit(0)
-
-    filename_input = sys.argv[1]
-    filename_output = sys.argv[2]
-
-    f = open(filename_input, 'r')
-    code = f.read()
-    f.close()
-
-    code = code.replace('\n', '')
-    code_evm = bytes.fromhex(code)
-
-    f = open(filename_output, 'wb')
-    f.write(code_evm)
-    f.close()
-```
+without any magic number of tags. Hex code can be converted  to a .evm file via python using for
+instance https://raw.githubusercontent.com/crytic/ethersplay/master/utils/convert_bytecode.py.
 
 - Launch ghidra, create a new project and import a .evm file. You can use the examples available at
   examples/
@@ -67,19 +41,18 @@ if __name__ == '__main__':
 
 ![script](media/2.png)
 
-- Run evm_helper.py. This script will fill the jump table of the contract and explore the functions, thus creating the CFG using the
+- Run evm_helper.py with the byte code file as argument. This script will fill the jump table of the contract and explore the functions, thus creating the CFG using the
   crytic evm_cfg_builder library.
 
 ```
-$ python3 evm_helper.py 
        _     _     _                                      
   __ _| |__ (_) __| |_ __ __ _        _____   ___ __ ___  
  / _` | '_ \| |/ _` | '__/ _` |_____ / _ \ \ / / '_ ` _ \ 
 | (_| | | | | | (_| | | | (_| |_____|  __/\ V /| | | | | |
- \__, |_| |_|_|\__,_|_|  \__,_|      \___| \_/ |_| |_| |_|
+ \__, |_| |_|_|\__,_|_|  \__,_|      \___| \_/ |_| |_| |_| v.0.1
  |___/                                                    
 
-[*] Reading RAM....
+Usage: python(3) evm_helper.py input.[evm | evm.h]
 ```
 
 - You can now explore the CFG, the functions and their properties as well as the disassemble code.
@@ -88,14 +61,6 @@ $ python3 evm_helper.py
 ![demo2](media/main2.png)
 
 ### Notes and limitations
-
-- ghidra_bridge suffers from a considerable latency when reading memory from Ghidra into
-  python3.
-- A long jump table will make the analysis slower, its size can be modified
-in evm.psec e.g. by default:
-```
-<memory_block name="evm_jump_table" start_address="evm_jump_table:0x00000000" length="0xffffff" mode="r" initialized="true"/>        
-```
 
 - The CFG is created according to evm_cfg_builder, this means that mainly
 the JUMP and JUMPI instructions are utilized. A jump table of 32x32 is
