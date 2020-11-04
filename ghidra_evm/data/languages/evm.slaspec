@@ -938,7 +938,9 @@ define token ext56(56)
 :PUSH29 imm_64_1, imm_64_2, imm64, imm40 is op=0x7c ; imm_64_1 ; imm_64_2 ; imm64 ; imm40 {}
 :PUSH30 imm_64_1, imm_64_2, imm64, imm48 is op=0x7d ; imm_64_1 ; imm_64_2 ; imm64 ; imm48 {}
 :PUSH31 imm_64_1, imm_64_2, imm64, imm56  is op=0x7e ; imm_64_1 ; imm_64_2 ; imm64 ; imm56 {}
-:PUSH32 imm_64_1, imm_64_2, imm64, imm56, imm8 is op=0x7f ; imm_64_1 ; imm_64_2 ; imm64 ; imm56 ; imm8  {}
+:PUSH32 imm_64_1, imm_64_2, imm64, imm56, imm8 is op=0x7f ; imm_64_1 ; imm_64_2 ; imm64 ; imm56 ; imm8  {
+	push8(imm_64_1:8);
+}
 
 :DUP1 is op=0x80 {
 	_value1 :$(SIZE) = 0;
@@ -956,8 +958,6 @@ define token ext56(56)
 	push8(_value2);
 	push8(_value1);
 	push8(_value2);
-	push8(_value1);
-
 }
 
 :DUP3 is op=0x82 {
@@ -975,8 +975,6 @@ define token ext56(56)
 	push8(_value2);
 	push8(_value1);
 	push8(_value3);
-	push8(_value2);
-	push8(_value1);	
 }
 
 
@@ -996,10 +994,7 @@ define token ext56(56)
 	push8(_value3);
 	push8(_value2);	
 	push8(_value1);		
-	push8(_value4);
-	push8(_value3);
-	push8(_value2);	
-	push8(_value1);		
+	push8(_value4);	
 
 }
 
@@ -1022,12 +1017,7 @@ define token ext56(56)
 	push8(_value3);
 	push8(_value2);	
 	push8(_value1);		
-	push8(_value5);
-	push8(_value4);
-	push8(_value3);
-	push8(_value2);	
-	push8(_value1);		
-
+	push8(_value5);	
 }
 
 :DUP6 is op=0x85 {
@@ -1054,12 +1044,6 @@ define token ext56(56)
 	push8(_value2);	
 	push8(_value1);	
 	push8(_value6);			
-	push8(_value5);
-	push8(_value4);
-	push8(_value3);
-	push8(_value2);	
-	push8(_value1);		
-
 }
 
 :DUP7 is op=0x86 {
@@ -1087,12 +1071,7 @@ define token ext56(56)
 	push8(_value3);
 	push8(_value2);	
 	push8(_value1);	
-	push8(_value6);			
-	push8(_value5);
-	push8(_value4);
-	push8(_value3);
-	push8(_value2);	
-	push8(_value1);				
+	push8(_value7);		
 }
 
 :DUP8 is op=0x87 {
@@ -1122,14 +1101,7 @@ define token ext56(56)
 	push8(_value3);
 	push8(_value2);	
 	push8(_value1);	
-	push8(_value8);				
-	push8(_value7);
-	push8(_value6);			
-	push8(_value5);
-	push8(_value4);
-	push8(_value3);
-	push8(_value2);	
-	push8(_value1);			
+	push8(_value8);						
 }
 
 
@@ -1165,16 +1137,6 @@ define token ext56(56)
 	push8(_value2);	
 	push8(_value1);	
 	push8(_value9);					
-	push8(_value8);				
-	push8(_value7);
-	push8(_value6);			
-	push8(_value5);
-	push8(_value4);
-	push8(_value3);
-	push8(_value2);	
-	push8(_value1);			
-	
-	
 }
 
 :DUP10 is op=0x89 {
@@ -1210,16 +1172,7 @@ define token ext56(56)
 	push8(_value3);
 	push8(_value2);	
 	push8(_value1);	
-	push8(_value10);		
-	push8(_value9);					
-	push8(_value8);				
-	push8(_value7);
-	push8(_value6);			
-	push8(_value5);
-	push8(_value4);
-	push8(_value3);
-	push8(_value2);	
-	push8(_value1);				
+	push8(_value10);					
 }
 
 
@@ -1262,16 +1215,7 @@ define token ext56(56)
 	push8(_value2);	
 	push8(_value1);	
 	push8(_value11);			
-	push8(_value10);		
-	push8(_value9);					
-	push8(_value8);				
-	push8(_value7);
-	push8(_value6);			
-	push8(_value5);
-	push8(_value4);
-	push8(_value3);
-	push8(_value2);	
-	push8(_value1);			
+		
 }
 
 
@@ -1315,18 +1259,7 @@ define token ext56(56)
 	push8(_value3);
 	push8(_value2);	
 	push8(_value1);	
-	push8(_value12);					
-	push8(_value11);			
-	push8(_value10);		
-	push8(_value9);					
-	push8(_value8);				
-	push8(_value7);
-	push8(_value6);			
-	push8(_value5);
-	push8(_value4);
-	push8(_value3);
-	push8(_value2);	
-	push8(_value1);			
+	push8(_value12);						
 }
 
 
@@ -1373,18 +1306,6 @@ define token ext56(56)
 	push8(_value2);	
 	push8(_value1);	
 	push8(_value13);		
-	push8(_value12);		
-	push8(_value11);			
-	push8(_value10);		
-	push8(_value9);					
-	push8(_value8);				
-	push8(_value7);
-	push8(_value6);			
-	push8(_value5);
-	push8(_value4);
-	push8(_value3);
-	push8(_value2);	
-	push8(_value1);		
 }
 
 
@@ -1435,19 +1356,6 @@ define token ext56(56)
 	push8(_value2);	
 	push8(_value1);	
 	push8(_value14);			
-	push8(_value13);		
-	push8(_value12);		
-	push8(_value11);			
-	push8(_value10);		
-	push8(_value9);					
-	push8(_value8);				
-	push8(_value7);
-	push8(_value6);			
-	push8(_value5);
-	push8(_value4);
-	push8(_value3);
-	push8(_value2);	
-	push8(_value1);		
 }
 
 :DUP15 is op=0x8e {
@@ -1498,22 +1406,9 @@ define token ext56(56)
 	push8(_value3);
 	push8(_value2);	
 	push8(_value1);
-	push8(_value15);				
-	push8(_value14);			
-	push8(_value13);		
-	push8(_value12);		
-	push8(_value11);			
-	push8(_value10);		
-	push8(_value9);					
-	push8(_value8);				
-	push8(_value7);
-	push8(_value6);			
-	push8(_value5);
-	push8(_value4);
-	push8(_value3);
-	push8(_value2);	
-	push8(_value1);			
+	push8(_value15);					
 }
+
 :DUP16 is op=0x8f {
 	_value1 :$(SIZE) = 0;
 	_value2 :$(SIZE) = 0;
@@ -1564,22 +1459,7 @@ define token ext56(56)
 	push8(_value3);
 	push8(_value2);	
 	push8(_value1);
-	push8(_value16);						
-	push8(_value15);				
-	push8(_value14);			
-	push8(_value13);		
-	push8(_value12);		
-	push8(_value11);			
-	push8(_value10);		
-	push8(_value9);					
-	push8(_value8);				
-	push8(_value7);
-	push8(_value6);			
-	push8(_value5);
-	push8(_value4);
-	push8(_value3);
-	push8(_value2);	
-	push8(_value1);			
+	push8(_value16);							
 }
 
 :SWAP1 is op=0x90 {
