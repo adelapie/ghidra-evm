@@ -7,9 +7,8 @@ define alignment=1;
 define space register     	type=register_space  size=$(SIZE)  wordsize=1;
 define space ram          	type=ram_space       size=$(SIZE)  wordsize=1 default;
 define space evm_ram 	  	type=ram_space size=$(SIZE) wordsize=1;
-#define space evm_jump_table type=ram_space size=2 wordsize=2;
 define space evm_jump_table type=ram_space size=4 wordsize=4;
-
+define space evm_storage	type=ram_space size=$(SIZE) wordsize=1;
 
 define register offset=0x00 size=$(SIZE) [sp pc];
 
@@ -85,21 +84,22 @@ macro pop8(x)
 }
 
 :SLOAD is op = 0x54 {
-
 	_value1 :$(SIZE) = 0;
 	_value2 :$(SIZE) = 0;
 
 	pop8(_value1);
-	_value2 = load_storage_word(_value1);	
+	_value2 = *[evm_storage]_value1;	
 	push8(_value2);
-
 }
 
-:SSTORE is op = 0x55 {
-	_value1 :$(SIZE) = 0;
-		pop8(_value1);
-		save_storage_word(_value1);
-
+:SSTORE is op = 0x55 {		
+	local addr_t:8;
+	local val_t:8;
+	
+	pop8(addr_t);
+	pop8(val_t);
+	
+	*[evm_storage]addr_t = val_t;		
 }
 
 :CALLVALUE is op = 0x34 {
@@ -302,7 +302,7 @@ define pcodeop get_revert_ret_addr;
 
 :CALLDATALOAD is op=0x35 {
 
-	_value1 :$(SIZE) = 0;
+	local _value1 :$(SIZE) = 0;
 	
 	_value1 = transaction_data_load();
 	push8(_value1);

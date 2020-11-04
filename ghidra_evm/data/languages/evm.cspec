@@ -7,7 +7,8 @@
     <global>
         <range space="ram"/>
         <range space="evm_ram"/>
-        <range space="evm_jump_table"/>              
+        <range space="evm_jump_table"/>       
+        <range space="evm_storage"/>                             
     </global>
     <stackpointer register="sp" space="ram" growth="negative"/>
     <default_proto>
