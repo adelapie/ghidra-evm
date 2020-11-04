@@ -155,22 +155,6 @@ macro pop8(x)
 
    _part5 = _part1 | _part2 | _part3 | _part4;
 	goto[_part5];   
-   
-   #_addr_now :$(SIZE) = 0;
-   #_jump_now :2 = 0;
-	
-   #_addr_now = inst_start;
-   #_jump_now = *[evm_jump_table]_addr_now:2;
-
-   #_part_a :2 = 0;
-   #_part_b :2 = 0;
-   #_part_c :2 = 0;
-   
-   #_part_a =  ((_jump_now >> 8) & 0x00ff);
-   #_part_b = ((_jump_now << 8) & 0xff00);   
-   #_part_c = _part_a | _part_b;
-   
-	#goto[_part_c]; 	
 }
 
 :JUMPI is op=0x57 {
@@ -206,41 +190,8 @@ macro pop8(x)
    _part5 = _part1 | _part2 | _part3 | _part4;
 	goto[_part5];   
 	
-    #_addr_now :$(SIZE) = 0;
-	#_jump_now :2 = 0;
-	
-	#_addr_now = inst_start;
-    #_jump_now = *[evm_jump_table]_addr_now:2;
-
-    #_part_a :2 = 0;
-    #_part_b :2 = 0;
-    #_part_c :2 = 0;
-   
-    #_part_a =  ((_jump_now >> 8) & 0x00ff);
-    #_part_b = ((_jump_now << 8) & 0xff00);   
-    #_part_c = _part_a | _part_b;
-   
-	#goto[_part_c];
-
 <end>
 }
-
-# Alternative JUMPI description
-# (no jump table):
-#:JUMPI is op=0x57 {
-
-	#_value1 :$(SIZE) = 0;
-	#_value2 :$(SIZE) = 0;
-
-	#pop8(_value1);
-	#pop8(_value2);
-
-	#if(_value2 == 0) goto <end>;
-	
-	#goto [_value1];
-
-#<end>
-#}
 
 define pcodeop get_stop_ret_addr;
 define pcodeop get_revert_ret_addr;
