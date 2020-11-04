@@ -2,7 +2,7 @@
 
 <compiler_spec>
 	<readonly>
-    	<range space="evm_jump_table" first="0x00000000" last="0xffffff"/>
+    	<range space="evm_jump_table" first="0x00000000" last="0xfffffff"/>
 	</readonly>
     <global>
         <range space="ram"/>
