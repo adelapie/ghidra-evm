@@ -3,7 +3,7 @@
 <processor_spec>
  <programcounter register="pc"/> 
     <default_memory_blocks>
-        <memory_block name="evm_jump_table" start_address="evm_jump_table:0x0000" length="0x1000" mode="r" initialized="true"/>    
+        <memory_block name="evm_jump_table" start_address="evm_jump_table:0x00000000" length="0xffffff" mode="r" initialized="true"/>        
         <memory_block name="evm_ram" start_address="evm_ram:0x00000000" length="0x00001000" mode="rw" initialized="true"/>
     </default_memory_blocks>
     <default_symbols>

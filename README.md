@@ -91,14 +91,18 @@ $ python3 evm_helper.py
 
 - ghidra_bridge suffers from a considerable latency when reading memory from Ghidra into
   python3.
+- A long jump table will make the analysis slower, its size can be modified
+in evm.psec e.g. by default:
+```
+<memory_block name="evm_jump_table" start_address="evm_jump_table:0x00000000" length="0xffffff" mode="r" initialized="true"/>        
+```
+
 - The CFG is created according to evm_cfg_builder, this means that mainly
-the JUMP and JUMPI instructions are utilized. A jump table of 16x16 is
+the JUMP and JUMPI instructions are utilized. A jump table of 32x32 is
 utilized to detect and show branches in the disassembly and control flow windows.
 - ghidra has not been designed to deal with architectures of wordsizes >
 64-bit. That means that supporting long instructions such as PUSH32 in
-SLEIGH should be done using alternative memory structures. Further, given
-the wordsize limitation in Ghidra, ghidra-evm only supports compiled
-contracts with branches in the first 0xffff instructions.
+SLEIGH should be done via dedicated memory structures. 
 
 ### TODO
 
