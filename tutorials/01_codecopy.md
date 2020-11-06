@@ -6,12 +6,12 @@ will demonstrate how to find the methods of the smart contract.
 
 First, we load casino.evm in Ghidra:
 
-![main](../media/tut_2_1.png)
+![main](../media/tut2_1.png)
 
 And load the ghidra_bridge server in the background as we did in the first
 tutorial:
 
-![load](../media/tut_2_2.jpg)
+![load](../media/tut2_2.jpg)
 
 When we launch evm_helper.py, only one function, the _dispatcher is found:
 
@@ -46,7 +46,7 @@ Finishes at:  0x82
 [*] Disassemble all....
 ```
 
-![evm1](../media/tut_2_3.png)
+![evm1](../media/tut2_3.png)
 
 This functions calls CODECOPY from 0x9a with a size of 0x967 bytes.
 We can try to load this code, extract its CFG and try to find functions
@@ -95,10 +95,10 @@ analyze its CFG further on:
 We can now see the function selector and the different JUMPS where the method
 chosen to be executed by the contract is sent:
 
-![evm2](../media/tut_2_4.png)
+![evm2](../media/tut2_4.png)
 
 As well as a list of new functions detected by cfg_evm_builder:
 
-![evm2](../media/tut_2_5.png)
-![evm2](../media/tut_2_6.png)
+![evm2](../media/tut2_5.png)
+![evm2](../media/tut2_6.png)
 
