@@ -31,7 +31,7 @@ of a smart contract:
 
 ## Tutorials
 
-| Script | Description |
+| Tutorial | Description |
 | --- | --- |
 | [Utilization](tutorials/00_utilization.md) | Simple utilization instructions with test.evm |
 
