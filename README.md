@@ -10,6 +10,17 @@ to assist Ghidra in the CFG generation process. ghidra-evm consists of:
 limitations of Ghidra (See Notes and limitations).
 - A python3 script that uses evm_cfg_builder and ghidra_bridge in order to
 assist ghidra generating the CFG and exploring the function properties.
+- A collection of scripts that help to reverse engineering different aspects
+of a smart contract:
+
+| Script | Description |
+| --- | --- |
+| search_codecopy | When analyzing creation code in a smart contract we can
+only see the _dispatcher function that uses CODECOPY in order to write the
+run time code into memory. This script looks for useful CODECOPY
+instructions and finds the smart contract methods hidden in the runtime part
+of the contract. |
+
 
 ## Installation instructions
 
