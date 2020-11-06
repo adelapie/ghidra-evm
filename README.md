@@ -34,6 +34,7 @@ of a smart contract:
 | Tutorial | Description |
 | --- | --- |
 | [Utilization](tutorials/00_utilization.md) | Simple utilization instructions with test.evm |
+| [Analyzing creation bytecode](tutorials/01_codecopy.md) | Using search_codecopy.py to analyze creation code and finding hidden methods |
 
 ### Notes and limitations
 
