@@ -16,7 +16,7 @@ of a smart contract:
 | Script | Description |
 | --- | --- |
 | [search_codecopy.py](scripts/search_codecopy.py) | When analyzing creation code in a smart contract we can only see the _dispatcher function that uses CODECOPY in order to write the run time code into memory. This script looks for useful CODECOPY instructions and finds the smart contract methods hidden in the runtime part of the contract. |
-| [search_dangerous_instructions.py](scripts/search_dangerous_instructions.py) | Instructions such as CALL, CALLCODE, SELFDESTRUCT and DELEGATECALL can sometimed be abused to transfer funds to another contract. This script finds them.|
+| [search_dangerous_instructions.py](scripts/search_dangerous_instructions.py) | Instructions such as CALL, CALLCODE, SELFDESTRUCT and DELEGATECALL can sometimed be abused to transfer funds to another contract. This script finds them and creates a label for each occurrence.|
 
 ## Installation instructions
 
@@ -35,6 +35,7 @@ of a smart contract:
 | --- | --- |
 | [Utilization](tutorials/00_utilization.md) | Simple utilization instructions with test.evm |
 | [Analyzing creation bytecode](tutorials/01_codecopy.md) | Using search_codecopy.py to analyze creation code and finding hidden methods |
+| [Looking for dangerous instructions](tutorials/03_dangerous.md) | Using search_dangerous_instructions.py to analyze a SELFDESTRUCT ocurrence |
 
 ### Notes and limitations
 

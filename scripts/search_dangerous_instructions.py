@@ -50,7 +50,7 @@ while True:
   ins = i.getMnemonicString()
   if ins in DANGEROUS_INSTRUCTIONS:
    print("\t[!]", ins, "found at", i.getAddress())
-
+   createLabel(i.getAddress(), ins+"_"+str(i.getAddress()), True)
   i = i.getNext()
   if i is None:
    break
