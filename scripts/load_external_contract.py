@@ -14,6 +14,7 @@ def main():
     parser.add_argument("api_key", help="etherscan API key")
     parser.add_argument("contract_address", help="contract address")
     parser.add_argument("-v", "--verbosity", action="count", default=0)
+    parser.add_argument("-m", "--main", action="count", default=0, help="Use main net instead of Ropsten (default)")
     
     args = parser.parse_args()
     
@@ -26,7 +27,11 @@ def main():
     print("[*] Downloading contract byte code...")
 
     try: 
-        request = urllib.request.urlopen(URL_ROPSTEN)
+        if (args.main):
+            request = urllib.request.urlopen(URL_MAIN)
+        else:
+            request = urllib.request.urlopen(URL_ROPSTEN)
+        
         data = json.load(request)
 
         if 'result' in data:
@@ -36,9 +41,13 @@ def main():
             contract_file = open(args.contract_address.strip() + ".evm_h", "w")
 
             if (data['result'].startswith("0x")):
-                contract_file.write(data['result'][2:])
+                len = contract_file.write(data['result'][2:])
+                if (len == 0):
+                    print("[!] 0 bytes were written")
             else:
-                contract_file.write(data['result'])
+                len = contract_file.write(data['result'])
+                if (len == 0):
+                    print("[!] 0 bytes were written")
 
             contract_file.close()        
 
