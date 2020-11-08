@@ -48,16 +48,15 @@ module in Eclipse with processor and loader in order to extend or debug
 | --- | --- |
 | [Utilization](tutorials/00_utilization.md) | Simple utilization instructions with test.evm |
 | [Analyzing creation bytecode](tutorials/01_codecopy.md) | Using search_codecopy.py to analyze creation code and finding hidden methods |
-| [Looking for dangerous instructions](tutorials/03_dangerous.md) | Using search_dangerous_instructions.py to analyze a SELFDESTRUCT ocurrence |
-| [Downloading smart contract bytecode from the blockchain into Ghidra](tutorials/04_external.md) | Using load_external_contract.py to download EVM byte code from the blockchain into a .evm_h file |
+| [Looking for dangerous instructions](tutorials/02_dangerous.md) | Using search_dangerous_instructions.py to analyze a SELFDESTRUCT ocurrence |
+| [Downloading smart contract bytecode from the blockchain into Ghidra](tutorials/03_external.md) | Using load_external_contract.py to download EVM byte code from the blockchain into a .evm_h file |
 
 ### Notes
 
 - The CFG is created according to evm_cfg_builder: JUMP and JUMPI
   instructions are utilized.
 - A jump table of 32x32 (evm_jump_table) is generated accordingly in order to detect and show branches in the disassembly and control flow windows.
-- Ghidra has not been designed to deal with architectures and memories of wordsize > 64-bit.
-- This means that instructions such as PUSH32 are not correctly shown in the decompilation window.
+- Ghidra has not been designed to deal with architectures and memories of wordsize > 64-bit. This means that instructions such as PUSH32 are not correctly shown in the decompilation window.
 
 
 
