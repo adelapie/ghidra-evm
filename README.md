@@ -1,17 +1,20 @@
 
 # Ghidra EVM Module
 
-ghidra-evm is a ghidra loader and plugin to reverse engineering Ethereum VM
-(EVM) bytecode. This version uses the Ghidra 9.1.2 API. It relies on
+Ghidra-evm is a ghidra module (processor module, custom loader and plugin(s))
+that disassembles Ethereum VM (EVM) bytecode and generates a control-flow
+graph (CFG) of the smart contract. 
+
+The last version uses the Ghidra 9.1.2 API. It relies on
 the crytic evm_cfg_builder library (https://github.com/crytic/evm_cfg_builder)
-to assist Ghidra in the CFG generation process. ghidra-evm consists of:
-- A loader that parses hex code and byte code in .evm and .evm_h files.
+to assist Ghidra in the CFG generation process. Ghidra-evm consists of:
+- A loader that writes hex code and byte code into .evm and .evm_h files respectively.
 - The SLEIGH definition of the EVM instruction set taking into account the
-limitations of Ghidra (See Notes and limitations).
-- A python3 script that uses evm_cfg_builder and ghidra_bridge in order to
-assist ghidra generating the CFG and exploring the function properties.
-- A collection of scripts that help to reverse engineering different aspects
-of a smart contract:
+Ghidra core limitations (See Notes).
+- A helper script that uses evm_cfg_builder and ghidra_bridge in order to
+assist ghidra generating the CFG and exploring the function properties of a
+smart contract.
+- A collection of scripts that help to reverse engineering different aspects of a smart contract:
 
 | Script | Description |
 | --- | --- |
@@ -30,6 +33,12 @@ of a smart contract:
 	- Click OK 
 	- Restart Ghidra
 
+## Compilation instructions
+
+The contents of the ghidra-evm directory can be used to create a Ghidra
+module in Eclipse with processor and loader in order to extend or debug
+ghidra-evm.
+
 ## Tutorials
 
 | Tutorial | Description |
@@ -39,21 +48,14 @@ of a smart contract:
 | [Looking for dangerous instructions](tutorials/03_dangerous.md) | Using search_dangerous_instructions.py to analyze a SELFDESTRUCT ocurrence |
 | [Downloading smart contract bytecode from the blockchain into Ghidra](tutorials/04_external.md) | Using load_external_contract.py to download EVM byte code from the blockchain into a .evm_h file |
 
-### Notes and limitations
+### Notes
 
-- The CFG is created according to evm_cfg_builder, this means that mainly
-the JUMP and JUMPI instructions are utilized. A jump table of 32x32 is
-utilized to detect and show branches in the disassembly and control flow windows.
-- ghidra has not been designed to deal with architectures of wordsizes >
-64-bit. That means that supporting long instructions such as PUSH32 in
-SLEIGH should be done via dedicated memory structures. 
+- The CFG is created according to evm_cfg_builder: JUMP and JUMPI
+  instructions are utilized.
+- A jump table of 32x32 (evm_jump_table) is generated accordingly in order to detect and show branches in the disassembly and control flow windows.
+- Ghidra has not been designed to deal with architectures and memories of wordsize > 64-bit.
+- This means that instructions such as PUSH32 are not correctly shown in the decompilation window.
 
-### TODO
-
-- Implement memory structures for dealing with instructions having
-large operands such as PUSH32.
-- Improve the SLEIGH definitions of complex instructions to aid
-the decompilation process.
 
 
 
