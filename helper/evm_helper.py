@@ -78,25 +78,6 @@ setAnalysisOption(currentProgram, "Embedded Media", "false");
 setAnalysisOption(currentProgram, "ASCII Strings", "false");
 setAnalysisOption(currentProgram, "Create Address Tables", "false");
 
-"""
-print("[*] Reading RAM....")
-
-evm_code = ""
-
-# Is this faster ?
-#array = b.remote_import("array")
-#all_bytes = array.array ( 'b', '\x00'*size )
-#ram.getBytes(addr, all_bytes, 0, size)
-#for val in all_bytes:
-#        evm_code = evm_code + "{:02x}".format(val & 0xff)
-
-for i in tqdm(range(0, size)):
-        ram_byte = ram.getByte(addr.add(i))
-        evm_code = evm_code + "{:02x}".format(ram_byte & 0xff)
-            
-print(evm_code)
-"""
-
 print("[*] Creating CFG...")
 cfg = CFG(evm_code)
 
