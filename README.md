@@ -58,6 +58,10 @@ module in Eclipse with processor and loader in order to extend or debug
 - A jump table of 32x32 (evm_jump_table) is generated accordingly in order to detect and show branches in the disassembly and control flow windows.
 - Ghidra has not been designed to deal with architectures and memories of wordsize > 64-bit. This means that instructions such as PUSH32 are not correctly shown in the decompilation window.
 
+### License
+
+Ghidra-evm is licensed and distributed under the AGPLv3.
+
 
 
 
