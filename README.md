@@ -3,12 +3,15 @@
 
 Ghidra-evm is a ghidra module (processor module, custom loader and plugin(s))
 that disassembles Ethereum VM (EVM) bytecode and generates a control-flow
-graph (CFG) of the smart contract. 
+graph (CFG) of a smart contract. 
 
 The last version uses the Ghidra 9.1.2 API. It relies on
 the crytic evm_cfg_builder library (https://github.com/crytic/evm_cfg_builder)
-to assist Ghidra in the CFG generation process. Ghidra-evm consists of:
-- A loader that writes hex code and byte code into .evm and .evm_h files respectively.
+to assist Ghidra in the CFG generation process. 
+
+Ghidra-evm consists of:
+- A loader that writes hex code and byte code into .evm and .evm_h files respectively
+(See [examples](examples/)).
 - The SLEIGH definition of the EVM instruction set taking into account the
 Ghidra core limitations (See Notes).
 - A helper script that uses evm_cfg_builder and ghidra_bridge in order to
@@ -37,7 +40,7 @@ smart contract.
 
 The contents of the ghidra-evm directory can be used to create a Ghidra
 module in Eclipse with processor and loader in order to extend or debug
-ghidra-evm.
+[ghidra_evm](ghidra_evm).
 
 ## Tutorials
 
