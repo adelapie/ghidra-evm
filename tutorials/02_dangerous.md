@@ -26,3 +26,5 @@ that the script has found:
 
 ![selfdestruct](../media/tut3_1.png)
 
+In this case, the kill() method is comparing the address of the caller with
+the owner address before calling SELFDESTRUCT.
