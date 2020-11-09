@@ -10,7 +10,7 @@ the crytic evm_cfg_builder library (https://github.com/crytic/evm_cfg_builder)
 to assist Ghidra in the CFG generation process. 
 
 Ghidra-evm consists of:
-- A loader that writes hex code and byte code into .evm and .evm_h files respectively
+- A loader that reads hex and byte code from .evm and .evm_h files respectively
 (See [examples](examples/)).
 - The SLEIGH definition of the EVM instruction set taking into account the
 Ghidra core limitations (See Notes).
