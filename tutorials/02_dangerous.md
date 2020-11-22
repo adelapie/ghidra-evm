@@ -3,7 +3,7 @@
 
 Instructions such as CALL, CALLCODE, SELFDESTRUCT and DELEGATECALL can sometimed be abused to transfer funds to another contract. 
 This tutorial is a continuation of [Analyzing creation
-bytecode](tutorials/01_codecopy.md). After analyzing the runtime code via
+bytecode](https://github.com/adelapie/ghidra-evm/blob/main/tutorials/01_codecopy.md). After analyzing the runtime code via
 the helper and finding the smart contract methods via search_codecopy.py, we can try to find dangergous
 instructions in the contract:
 
