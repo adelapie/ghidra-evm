@@ -52,10 +52,9 @@ module in Eclipse with processor and loader in order to extend or debug
 | [Downloading smart contract bytecode from the blockchain into Ghidra](tutorials/03_external.md) | Using load_external_contract.py to download EVM byte code from the blockchain into a .evm_h file |
 
 ## Integration with external symbolic execution tools
-| Tutorial | Description |
+| Script | Description |
 | --- | --- |
-| [teether](scripts/teether_integration.py) | It marks the critical path in Ghidra before generating the exploit
-Requires [teether](https://github.com/nescio007/teether)|
+| [teether](scripts/teether_integration.py) | It marks the critical path in Ghidra before generating the exploit.  Requires [teether](https://github.com/nescio007/teether)|
 
 
 ### Notes
