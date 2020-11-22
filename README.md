@@ -54,7 +54,7 @@ module in Eclipse with processor and loader in order to extend or debug
 ## Integration with external symbolic execution tools
 | Script | Description |
 | --- | --- |
-| [teether](scripts/teether_integration.py) | It marks the critical path in Ghidra before generating the exploit.  Requires [teether](https://github.com/nescio007/teether)|
+| [teether](scripts/teether_integration.py) | It marks the critical path in Ghidra before generating the exploit.  Requires [teether](https://github.com/nescio007/teether).|
 
 
 ### Notes
