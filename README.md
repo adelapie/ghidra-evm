@@ -51,6 +51,13 @@ module in Eclipse with processor and loader in order to extend or debug
 | [Looking for dangerous instructions](tutorials/02_dangerous.md) | Using search_dangerous_instructions.py to analyze a SELFDESTRUCT ocurrence |
 | [Downloading smart contract bytecode from the blockchain into Ghidra](tutorials/03_external.md) | Using load_external_contract.py to download EVM byte code from the blockchain into a .evm_h file |
 
+## Integration with external symbolic execution tools
+| Tutorial | Description |
+| --- | --- |
+| [teether](scripts/teether_integration.py) | It marks the critical path in Ghidra before generating the exploit
+Requires [teether](https://github.com/nescio007/teether)|
+
+
 ### Notes
 
 - The CFG is created according to evm_cfg_builder: JUMP and JUMPI
