@@ -1,6 +1,8 @@
 
 # Ghidra EVM Module
 
+![front](https://raw.githubusercontent.com/adelapie/ghidra-evm/main/media/tut3_1.png)
+
 Ghidra-evm is a ghidra module (processor module, custom loader and plugin(s))
 that disassembles Ethereum VM (EVM) bytecode and generates a control-flow
 graph (CFG) of a smart contract. 
@@ -43,6 +45,8 @@ module in Eclipse with processor and loader in order to extend or debug
 [ghidra_evm](ghidra_evm).
 
 ## Tutorials
+
+![middle](https://raw.githubusercontent.com/adelapie/ghidra-evm/main/media/tut2_4.png)
 
 | Tutorial | Description |
 | --- | --- |
