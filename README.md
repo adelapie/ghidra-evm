@@ -72,6 +72,9 @@ module in Eclipse with processor and loader in order to extend or debug
 
 Ghidra-evm is licensed and distributed under the AGPLv3.
 
+### Thanks
+
+This work was supported by the European Commission through the H2020 Programme’s Project M-Sec under Grant 814917.
 
 
 
