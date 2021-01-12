@@ -3,8 +3,11 @@
 
 ![front](https://raw.githubusercontent.com/adelapie/ghidra-evm/main/media/tut3_1.png)
 
-Ghidra-evm is a ghidra module (processor module, custom loader and plugin(s))
-that disassembles Ethereum VM (EVM) bytecode and generates a control-flow
+In the last few years, attacks on deployed smart contracts in the Ethereum blockchain have ended up in a significant amount of stolen funds due to programming mistakes. Since smart contracts, once compiled and deployed, are complex to modify and update different practitioners have suggested the importance of reviewing their security in the blockchain where only Ethereum Virtual Machine (EVM) bytecode is available. In this respect, reverse engineering through disassemble and decompilation can be effective.
+
+ghidra-EVM is a Ghidra module for reverse engineering smart contracts. It can be used to download Ethereum Virtual Machine (EVM) bytecode from the Ethereum blockchain and disassemble and decompile the smart contract. Further, it can analyze creation code, find contract methods and locate insecure instructions. 
+ 
+It comprises a processor module, custom loader and plugin(s) that disassembles Ethereum VM (EVM) bytecode and generates a control-flow
 graph (CFG) of a smart contract. 
 
 The last version uses the Ghidra 9.1.2 API. It relies on
