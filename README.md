@@ -78,7 +78,7 @@ Ghidra-evm is licensed and distributed under the AGPLv3.
 ### Thanks
 
 - This work was supported by the European Commission through the H2020 Programme’s Project M-Sec under Grant 814917.
-- ghidra-evm was presented in Black Hat Asia 2021, in the Arsenal track. You can find the slides at [slides](slides/)
+- Ghidra-EVM was presented in the arsenal track of Black Hat Asia 2021. You can find the slides [here](slides/).
 
 
 
