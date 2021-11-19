@@ -33,14 +33,16 @@ from evm_cfg_builder.cfg import CFG
 
 JUMP_TABLE_WORD_SIZE = 4
 
-print("""\
+print(
+    """\
        _     _     _                                      
   __ _| |__ (_) __| |_ __ __ _        _____   ___ __ ___  
  / _` | '_ \| |/ _` | '__/ _` |_____ / _ \ \ / / '_ ` _ \ 
 | (_| | | | | | (_| | | | (_| |_____|  __/\ V /| | | | | |
  \__, |_| |_|_|\__,_|_|  \__,_|      \___| \_/ |_| |_| |_| v.0.1
  |___/                                                    
-""")
+"""
+)
 
 
 if len(sys.argv) != 2:
@@ -51,19 +53,21 @@ print("[*] Parsing bytecode...")
 
 filename_input = sys.argv[1]
 
-if filename_input.endswith('.evm'):
-    with open(filename_input, 'rb') as f:
+if filename_input.endswith(".evm"):
+    with open(filename_input, "rb") as f:
         evm_code = f.read()
     print(binascii.hexlify(evm_code))
-elif filename_input.endswith('.evm_h'):
-    with open(filename_input, 'r') as f:
-        evm_code = f.read()    
+elif filename_input.endswith(".evm_h"):
+    with open(filename_input, "r") as f:
+        evm_code = f.read()
         print(evm_code)
 else:
     print("[!] Imposible to read bytecode")
     exit(0)
 
-b = ghidra_bridge.GhidraBridge(namespace=globals(), response_timeout=1000) # creates the bridge and loads the flat API into the global namespace
+b = ghidra_bridge.GhidraBridge(
+    namespace=globals(), response_timeout=1000
+)  # creates the bridge and loads the flat API into the global namespace
 
 tid = currentProgram.startTransaction("ghidrda evm")
 
@@ -74,37 +78,58 @@ size = ram.getSize()
 
 print("[*] Setting analysis options....")
 
-setAnalysisOption(currentProgram, "Embedded Media", "false");
-setAnalysisOption(currentProgram, "ASCII Strings", "false");
-setAnalysisOption(currentProgram, "Create Address Tables", "false");
+setAnalysisOption(currentProgram, "Embedded Media", "false")
+setAnalysisOption(currentProgram, "ASCII Strings", "false")
+setAnalysisOption(currentProgram, "Create Address Tables", "false")
 
 print("[*] Creating CFG...")
 cfg = CFG(evm_code)
+
+for basic_block in cfg.basic_blocks:
+    print(
+        "{} -> {}".format(
+            basic_block,
+            sorted(basic_block.all_outgoing_basic_blocks, key=lambda x: x.start.pc),
+        )
+    )
 
 print("[*] Resolving jumps...")
 evm_jump_table = memory.getBlock("evm_jump_table")
 addr = evm_jump_table.getStart()
 
 for basic_block in cfg.basic_blocks:
-    if (basic_block.all_outgoing_basic_blocks):
-        print(basic_block)
-        print("Finishes at: ", hex(basic_block.end.pc))
-        if (len(basic_block.all_outgoing_basic_blocks) == 2):  # JUMPI creates 2 branches
-            for out_block in basic_block.all_outgoing_basic_blocks:
-                if ((out_block.start.pc - 1) != basic_block.end.pc):
-                    print("\tJUMPI to: ", hex(out_block.start.pc))
-                    jump_addr_list = out_block.start.pc.to_bytes(JUMP_TABLE_WORD_SIZE, byteorder="little")
-                    evm_jump_table.putBytes(addr.add(JUMP_TABLE_WORD_SIZE*basic_block.end.pc), jump_addr_list)
+    if not basic_block.all_outgoing_basic_blocks:
+        continue
 
-        else:
-            print("\tJUMP to:", hex(basic_block.all_outgoing_basic_blocks[0].start.pc))
-            jump_addr_list = basic_block.all_outgoing_basic_blocks[0].start.pc.to_bytes(JUMP_TABLE_WORD_SIZE, byteorder="little")
-            evm_jump_table.putBytes(addr.add(JUMP_TABLE_WORD_SIZE*basic_block.end.pc), jump_addr_list)
+    # Iterate over every outgoing basic block from the current basic block
+    for out_block in basic_block.all_outgoing_basic_blocks:
+        if (out_block.start.pc - 1) != basic_block.end.pc:
+            jump_addr_list = out_block.start.pc.to_bytes(
+                JUMP_TABLE_WORD_SIZE, byteorder="little"
+            )
+            evm_jump_table.putBytes(
+                addr.add(JUMP_TABLE_WORD_SIZE * basic_block.end.pc), jump_addr_list
+            )
+            from_addr = currentProgram.addressFactory.getAddress(
+                "%s" % basic_block.end.pc
+            )
+            to_addr = currentProgram.addressFactory.getAddress(
+                "%s" % out_block.start.pc
+            )
+
+            print(f"Adding xref from {from_addr} -> {to_addr}")
+            addInstructionXref(
+                from_addr,
+                to_addr,
+                -1,
+                ghidra.program.model.symbol.FlowType.COMPUTED_JUMP,
+            )
+
 
 print("[*] Exploring functions...")
-
 for function in sorted(cfg.functions, key=lambda x: x.start_addr):
-    print('\tFound function {}'.format(function.name))
+    print("\tFound function {}".format(function.name))
+
     createFunction(toAddr(function.start_addr), function.name)
     listing = currentProgram.getListing()
     codeUnit = listing.getCodeUnitAt(toAddr(function.start_addr))
@@ -122,7 +147,15 @@ analyzeAll(currentProgram)
 print("[*] Disassemble all....")
 disassemble(ram.getStart())
 
-currentProgram.endTransaction(tid,True)
+# For some reason Ghidra doesn't disassemble all the bytes in the listing view
+# even though they contain xref's. The following is a hack to fix that
+addr = currentProgram.addressFactory.getAddress("0x0")
+while True:
+    next_undef = getUndefinedDataAfter(addr)
+    if next_undef is None:
+        break
 
+    addr = next_undef.getAddress()
+    disassemble(addr)
 
-
+currentProgram.endTransaction(tid, True)
