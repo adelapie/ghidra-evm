@@ -20,15 +20,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 evm_helper.py helps Ghidra (via ghidra-bridge) to
-identify jumps and functions. Then, it instructs Ghidra to 
+identify jumps and functions. Then, it instructs Ghidra to
 analyze and disassemble evm code.
 """
+import binascii
+import os
+import sys
 
 import ghidra_bridge
-import pprint
-import sys
-import binascii
-from tqdm import tqdm
 from evm_cfg_builder.cfg import CFG
 
 JUMP_TABLE_WORD_SIZE = 4
@@ -45,77 +44,81 @@ print(
 )
 
 
-if len(sys.argv) != 2:
-    print("Usage: python(3) evm_helper.py input.[evm | evm.h]")
-    exit(0)
+def load_evm_code(fpath):
+    if not os.path.isfile(fpath):
+        sys.exit("[!] Unable to find file: {fpath}")
 
-print("[*] Parsing bytecode...")
+    if filename_input.endswith(".evm"):
+        with open(filename_input, "rb") as f:
+            evm_code = f.read()
+        print(binascii.hexlify(evm_code))
 
-filename_input = sys.argv[1]
+    elif filename_input.endswith(".evm_h"):
+        with open(filename_input, "r") as f:
+            evm_code = f.read()
+            print(evm_code)
+    else:
+        sys.exit("[!] Imposible to read bytecode")
 
-if filename_input.endswith(".evm"):
-    with open(filename_input, "rb") as f:
-        evm_code = f.read()
-    print(binascii.hexlify(evm_code))
-elif filename_input.endswith(".evm_h"):
-    with open(filename_input, "r") as f:
-        evm_code = f.read()
-        print(evm_code)
-else:
-    print("[!] Imposible to read bytecode")
-    exit(0)
+    return evm_code
 
-b = ghidra_bridge.GhidraBridge(
-    namespace=globals(), response_timeout=1000
-)  # creates the bridge and loads the flat API into the global namespace
 
-tid = currentProgram.startTransaction("ghidrda evm")
+def set_options():
+    print("[*] Setting analysis options....")
 
-memory = currentProgram.getMemory()
-ram = memory.getBlock("ram")
-addr = ram.getStart()
-size = ram.getSize()
+    setAnalysisOption(currentProgram, "Embedded Media", "false")
+    setAnalysisOption(currentProgram, "ASCII Strings", "false")
+    setAnalysisOption(currentProgram, "Create Address Tables", "false")
 
-print("[*] Setting analysis options....")
 
-setAnalysisOption(currentProgram, "Embedded Media", "false")
-setAnalysisOption(currentProgram, "ASCII Strings", "false")
-setAnalysisOption(currentProgram, "Create Address Tables", "false")
-
-print("[*] Creating CFG...")
-cfg = CFG(evm_code)
-
-for basic_block in cfg.basic_blocks:
-    print(
-        "{} -> {}".format(
-            basic_block,
-            sorted(basic_block.all_outgoing_basic_blocks, key=lambda x: x.start.pc),
+def print_all_bb(cfg):
+    for basic_block in cfg.basic_blocks:
+        sorted_bbs = sorted(
+            basic_block.all_outgoing_basic_blocks, key=lambda x: x.start.pc
         )
-    )
+        print(f"{basic_block} -> {sorted_bbs}")
 
-print("[*] Resolving jumps...")
-evm_jump_table = memory.getBlock("evm_jump_table")
-addr = evm_jump_table.getStart()
 
-for basic_block in cfg.basic_blocks:
-    if not basic_block.all_outgoing_basic_blocks:
-        continue
+def resolve_jumps(cfg, memory):
 
-    # Iterate over every outgoing basic block from the current basic block
-    for out_block in basic_block.all_outgoing_basic_blocks:
-        if (out_block.start.pc - 1) != basic_block.end.pc:
-            jump_addr_list = out_block.start.pc.to_bytes(
-                JUMP_TABLE_WORD_SIZE, byteorder="little"
-            )
-            evm_jump_table.putBytes(
-                addr.add(JUMP_TABLE_WORD_SIZE * basic_block.end.pc), jump_addr_list
-            )
-            from_addr = currentProgram.addressFactory.getAddress(
-                "%s" % basic_block.end.pc
-            )
-            to_addr = currentProgram.addressFactory.getAddress(
-                "%s" % out_block.start.pc
-            )
+    evm_jump_table = memory.getBlock("evm_jump_table")
+    addr = evm_jump_table.getStart()
+
+    for basic_block in cfg.basic_blocks:
+        if not basic_block.all_outgoing_basic_blocks:
+            continue
+
+        # Iterate over every outgoing basic block from the current basic block
+        for out_block in basic_block.all_outgoing_basic_blocks:
+            if (out_block.start.pc - 1) != basic_block.end.pc:
+                jump_addr_list = out_block.start.pc.to_bytes(
+                    JUMP_TABLE_WORD_SIZE, byteorder="little"
+                )
+
+                evm_jump_table.putBytes(
+                    addr.add(JUMP_TABLE_WORD_SIZE * basic_block.end.pc), jump_addr_list
+                )
+
+
+def resolve_xrefs(cfg):
+    listing = currentProgram.getListing()
+    for basic_block in cfg.basic_blocks:
+        if not basic_block.all_outgoing_basic_blocks:
+            continue
+
+        # Iterate over every outgoing basic block from the current basic block
+        for out_block in basic_block.all_outgoing_basic_blocks:
+            if (out_block.start.pc - 1) == basic_block.end.pc:
+                continue
+
+            from_addr = toAddr(basic_block.end.pc)
+            to_addr = toAddr(out_block.start.pc)
+
+            # Check if there is an existing XREF
+            code_unit = listing.getCodeUnitAt(from_addr)
+            ref = getReference(code_unit, to_addr)
+            if ref:
+                continue
 
             print(f"Adding xref from {from_addr} -> {to_addr}")
             addInstructionXref(
@@ -126,36 +129,80 @@ for basic_block in cfg.basic_blocks:
             )
 
 
-print("[*] Exploring functions...")
-for function in sorted(cfg.functions, key=lambda x: x.start_addr):
-    print("\tFound function {}".format(function.name))
+def explore_functions(cfg):
+    for function in sorted(cfg.functions, key=lambda x: x.start_addr):
+        print("\tFound function {}".format(function.name))
 
-    createFunction(toAddr(function.start_addr), function.name)
-    listing = currentProgram.getListing()
-    codeUnit = listing.getCodeUnitAt(toAddr(function.start_addr))
+        createFunction(toAddr(function.start_addr), function.name)
+        listing = currentProgram.getListing()
+        code_unit = listing.getCodeUnitAt(toAddr(function.start_addr))
 
-    attr_list = ""
+        annotate_functions(code_unit, function.attributes, function.name)
 
-    for attr in function.attributes:
-        attr_list = attr_list + " " + attr
 
-    codeUnit.setComment(codeUnit.PRE_COMMENT, "attributes: " + attr_list)
+def annotate_functions(code_unit, attributes, func_name):
+    attr_list = " ".join(attributes)
 
-print("[*] Analyzing....")
-analyzeAll(currentProgram)
+    print(f"Marking {func_name} as {attr_list}")
+    code_unit.setComment(code_unit.PRE_COMMENT, "attributes: " + attr_list)
 
-print("[*] Disassemble all....")
-disassemble(ram.getStart())
 
-# For some reason Ghidra doesn't disassemble all the bytes in the listing view
-# even though they contain xref's. The following is a hack to fix that
-addr = currentProgram.addressFactory.getAddress("0x0")
-while True:
-    next_undef = getUndefinedDataAfter(addr)
-    if next_undef is None:
-        break
+def force_disassemble_all():
+    # For some reason Ghidra doesn't disassemble all the bytes in the listing view
+    # even though they contain xref's. The following is a hack to fix that
+    addr = toAddr("0x0")
+    while True:
+        next_undef = getUndefinedDataAfter(addr)
+        if next_undef is None:
+            break
 
-    addr = next_undef.getAddress()
-    disassemble(addr)
+        addr = next_undef.getAddress()
+        disassemble(addr)
 
-currentProgram.endTransaction(tid, True)
+
+if __name__ == "__main__":
+
+    if len(sys.argv) != 2:
+        sys.exit("Usage: python(3) evm_helper.py input.[evm | evm.h]")
+
+    print("[*] Parsing bytecode...")
+
+    filename_input = sys.argv[1]
+
+    evm_code = load_evm_code(filename_input)
+
+    b = ghidra_bridge.GhidraBridge(
+        namespace=globals(), response_timeout=1000
+    )  # creates the bridge and loads the flat API into the global namespace
+
+    tid = currentProgram.startTransaction("ghidrda evm")
+
+    memory = currentProgram.getMemory()
+    ram = memory.getBlock("ram")
+
+    set_options()
+
+    print("[*] Creating CFG...")
+    cfg = CFG(evm_code)
+
+    print_all_bb(cfg)
+
+    print("[*] Resolving jumps...")
+    resolve_jumps(cfg, memory)
+
+    print("[*] Exploring functions...")
+    explore_functions(cfg)
+
+    print("[*] Analyzing...")
+    analyzeAll(currentProgram)
+
+    print("[*] Resolving XREF's not in jump table")
+    resolve_xrefs(cfg)
+
+    print("[*] Disassemble all...")
+    disassemble(ram.getStart())
+
+    print("[*] Force disassemble all...")
+    force_disassemble_all()
+
+    currentProgram.endTransaction(tid, True)
